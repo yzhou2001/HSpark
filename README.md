@@ -1,4 +1,4 @@
-## Astro: Fast SQL on HBase using SparkSQL
+## HSpark: Fast SQL on HBase using SparkSQL
 
 Apache HBase is a distributed Key-Value store of data on HDFS. It is modeled after Google’s Big Table, and provides APIs to query the data. The data is organized, partitioned and distributed by its “row keys”. Per partition, the data is further physically partitioned by “column families” that specify collections of “columns” of data. The data model is for wide and sparse tables where columns are dynamic and may well be sparse.
 
@@ -11,7 +11,7 @@ We believe, as an unified big data processing engine, Spark is in good position 
 
 ## Online Documentation
 
-Online documentation https://github.com/Huawei-Spark/Spark-SQL-on-HBase/blob/master/doc/SparkSQLOnHBase_v2.2.docx
+Online documentation https://github.com/yzhou2001/HSpark/doc/SparkSQLOnHBase_v2.2.docx
 
 ## Requirements
 
@@ -21,9 +21,9 @@ This version of 1.0.0 requires Spark 1.4.0.
 
 Spark HBase is built using [Apache Maven](http://maven.apache.org/).
 
-I. Clone and build Huawei-Spark/Spark-SQL-on-HBase
+I. Clone and build HSpark
 ```
-$ git clone https://github.com/Huawei-Spark/Spark-SQL-on-HBase spark-hbase
+$ git clone https://github.com/yzhou2001/HSpark.git
 ```
 
 II. Go to the root of the source tree
@@ -31,7 +31,7 @@ II. Go to the root of the source tree
 $ cd spark-hbase
 ```
 
-III. Build the project
+HIII. Build the project
 Build without testing
 ```
 $ mvn -DskipTests clean install 
@@ -68,7 +68,7 @@ The easiest way to start using Spark HBase is through the Scala shell:
 
 First, add the spark-hbase jar to the SPARK_CLASSPATH in the $SPARK_HOME/conf directory, as follows:
 ```
-SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/spark-sql-on-hbase-1.0.0.jar
+SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/hspark-1.0.0.jar
 ```
 Then go to the spark-hbase installation directory and issue
 ```
@@ -84,7 +84,7 @@ To run a python script, the PYTHONPATH environment should be set to the "python"
 export PYTHONPATH=/root-of-Spark-HBase/python
 ```
 
-Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 1.0.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages Huawei-Spark/Spark-SQL-on-HBase:1.0.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages Huawei-Spark/Spark-SQL-on-HBase:1.0.0" for Pythin shell.
+Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 1.0.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages /HSpark" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:1.0.0" for Pythin shell.
 
 ## Running Tests
 
