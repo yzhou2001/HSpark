@@ -17,16 +17,20 @@
 
 package org.apache.spark.sql.hbase
 
-import org.apache.hadoop.hbase.HRegionInfo
+import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.hbase.execution._
-import org.apache.spark.sql.hbase.util.{HBaseKVHelper, BinaryBytesUtils}
+import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._
 
 class HBaseBulkLoadIntoTableSuite extends TestBase {
+  override def afterAll() = {
+    dropNativeHbaseTable("testNullColumnBulkloadHTable")
+    super.afterAll()
+  }
+  
   // Test if we can parse 'LOAD DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1'
   test("bulk load parser test, local file") {
 
@@ -342,7 +346,8 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val splitKeys = Seq(4, 8, 12).map { x =>
       BinaryBytesUtils.create(IntegerType).toBytes(x)
     }
-    TestHbase.catalog.createHBaseUserTable("presplit_table", Set("cf1", "cf2"), splitKeys.toArray)
+    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
+      Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
       s"""CREATE TABLE testblk(col1 INT, col2 INT, col3 STRING, PRIMARY KEY(col1))
@@ -378,7 +383,8 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val splitKeys = Seq(4, 8, 12).map { x =>
       BinaryBytesUtils.create(IntegerType).toBytes(x)
     }
-    TestHbase.catalog.createHBaseUserTable("presplit_table", Set("cf1", "cf2"), splitKeys.toArray)
+    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
+      Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
       s"""CREATE TABLE testblk(col1 INT, col2 INT, col3 STRING, PRIMARY KEY(col1))
@@ -410,7 +416,6 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     dropNativeHbaseTable("presplit_table")
   }
 
-
   test("parall bulk load presplit table with more than 128 regions") {
     // HBasePartitioner binarySearch throws NPE if # regions > 128
     // commit dae6546373a14d4ceb22680954c3482ed33e346a
@@ -421,7 +426,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     }
 
     TestHbase.catalog.createHBaseUserTable(
-      "REGION_CNT_131_HTBL",
+      TableName.valueOf("REGION_CNT_131_HTBL"),
       Set("f"),
       splitKeys.toArray)
 
@@ -431,7 +436,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
         .stripMargin
 
     val regionInfoList =
-      TestHbase.hbaseAdmin.getTableRegions(Bytes.toBytes("REGION_CNT_131_HTBL"))
+      TestHbase.hbaseAdmin.getTableRegions(TableName.valueOf("REGION_CNT_131_HTBL"))
     assert(regionInfoList.size == 131, "Incorrect number of hbase tbl regions.")
 
     val sql2 =
@@ -458,7 +463,4 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     runSql("drop table region_cnt_131")
     dropNativeHbaseTable("REGION_CNT_131_HTBL")
   }
-
 }
-
-

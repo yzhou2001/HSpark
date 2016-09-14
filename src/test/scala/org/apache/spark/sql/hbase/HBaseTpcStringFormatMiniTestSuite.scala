@@ -37,6 +37,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   private[hbase] val csvPath = tpath(0)
 
   override protected def beforeAll() = {
+    super.beforeAll()
     val hbaseAdmin = TestHbase.hbaseAdmin
 
     /**
@@ -56,7 +57,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.catalog.checkLogicalTableExist(tableName)) {
+    if (TestHbase.catalog.tableExists(Seq(tableName))) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)
@@ -145,6 +146,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
 
   override protected def afterAll() = {
     runSql("DROP TABLE " + tableName)
+    super.afterAll()
   }
 
   test("Query 0") {
@@ -155,11 +157,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   }
 
   test("Query 1") {
-    val sql =
-      s"""SELECT ss_quantity, ss_wholesale_cost, ss_list_price
-         |FROM store_sales_stringformat
-         |WHERE ss_item_sk = 574
-         |AND ss_ticket_number = 29""".stripMargin
+    val sql = "SELECT ss_quantity, ss_wholesale_cost, ss_list_price FROM store_sales_stringformat WHERE ss_item_sk = 574 AND ss_ticket_number = 29"
     val rows = runSql(sql)
     // printRows(rows)
     assert(rows.size == 1)
@@ -171,9 +169,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   test("Query 2") {
     val sql =
       s"""SELECT ss_sold_date_sk, ss_sold_time_sk, ss_store_sk
-         |FROM store_sales_stringformat
-         |WHERE ss_item_sk = 3163
-         |AND ss_ticket_number = 7"""
+         |FROM store_sales_stringformat WHERE ss_item_sk = 3163 AND ss_ticket_number = 7"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -187,8 +183,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     val sql =
       s"""SELECT ss_customer_sk, ss_promo_sk, ss_coupon_amt, ss_net_profit
          |FROM store_sales_stringformat
-         |WHERE ss_item_sk = 18814
-         |AND ss_ticket_number = 29"""
+         |WHERE ss_item_sk = 18814 AND ss_ticket_number = 29"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -262,20 +257,19 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
       s"""SELECT ss_item_sk, ss_ticket_number, sum(ss_wholesale_cost) as sum_wholesale_cost
          |FROM store_sales_stringformat
          |WHERE ss_item_sk > 9000 AND ss_item_sk < 18000
-         |GROUP BY ss_item_sk, ss_ticket_number
-         |ORDER BY ss_item_sk, ss_ticket_number"""
+         |GROUP BY ss_item_sk, ss_ticket_number"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
     assert(rows.length == 2)
 
-    assert(rows(0).get(0) == 12919)
-    assert(rows(0).get(1) == 30)
-    assert(rows(0).get(2) == 61.959999084472656)
+    assert(rows(0).get(0) == 16335)
+    assert(rows(0).get(1) == 10)
+    assert(rows(0).get(2) == 82.3499984741211)
 
-    assert(rows(1).get(0) == 16335)
-    assert(rows(1).get(1) == 10)
-    assert(rows(1).get(2) == 82.3499984741211)
+    assert(rows(1).get(0) == 12919)
+    assert(rows(1).get(1) == 30)
+    assert(rows(1).get(2) == 61.959999084472656)
   }
 
   test("Query 8") {
@@ -286,30 +280,23 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
          |avg(ss_wholesale_cost) as avg_wholesale_cost
          |FROM store_sales_stringformat
          |WHERE ss_item_sk > 1000 AND ss_item_sk < 18000
-         |GROUP BY ss_item_sk, ss_ticket_number
-         |ORDER BY ss_item_sk, ss_ticket_number"""
+         |GROUP BY ss_item_sk, ss_ticket_number"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
     assert(rows.length == 5)
 
-    assert(rows(0).get(0) == 1579)
-    assert(rows(0).get(1) == 30)
-    assert(rows(0).get(2) == 64.0f)
-    assert(rows(0).get(3) == 64.0f)
-    assert(rows(0).get(4) == 64.0)
+    assert(rows(0).get(0) == 16335)
+    assert(rows(0).get(1) == 10)
+    assert(rows(0).get(2) == 82.35f)
+    assert(rows(0).get(2) == 82.35f)
+    assert(rows(0).get(2) == 82.3499984741211)
 
-    assert(rows(2).get(0) == 3163)
-    assert(rows(2).get(1) == 7)
-    assert(rows(2).get(2) == 69.53f)
-    assert(rows(2).get(3) == 69.53f)
-    assert(rows(2).get(4) == 69.52999877929688)
-
-    assert(rows(4).get(0) == 16335)
-    assert(rows(4).get(1) == 10)
-    assert(rows(4).get(2) == 82.35f)
-    assert(rows(4).get(3) == 82.35f)
-    assert(rows(4).get(4) == 82.3499984741211)
+    assert(rows(4).get(0) == 3163)
+    assert(rows(4).get(1) == 7)
+    assert(rows(4).get(2) == 69.53f)
+    assert(rows(4).get(2) == 69.53f)
+    assert(rows(4).get(2) == 69.52999877929688)
   }
 
   test("Query 9") {
@@ -371,10 +358,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   }
 
   test("Query 12") {
-    val sql =
-      s"""SELECT count(distinct ss_customer_sk) as count_distinct_customer
-         |FROM store_sales_stringformat"""
-        .stripMargin
+    val sql = "SELECT count(distinct ss_customer_sk) as count_distinct_customer FROM store_sales_stringformat"
     val rows = runSql(sql)
     // printRows(rows)
     assert(rows(0).get(0) == 5)
@@ -421,8 +405,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     val sql =
       s"""SELECT count(ss_customer_sk) as count_customer
          |FROM store_sales_stringformat
-         |WHERE ss_customer_sk <= 147954
-         |AND ss_quantity < 5000"""
+         |WHERE ss_customer_sk <= 147954 AND ss_quantity < 5000"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -444,23 +427,21 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     val sql =
       s"""SELECT ss_ticket_number, ss_quantity, ss_wholesale_cost, ss_list_price
          |FROM store_sales_stringformat
-         |WHERE ss_ticket_number = 10
-         |OR ss_wholesale_cost < 17.33
-         |ORDER BY ss_ticket_number, ss_quantity, ss_wholesale_cost, ss_list_price"""
+         |WHERE ss_ticket_number = 10 OR ss_wholesale_cost < 17.33"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
     assert(rows.length == 3)
 
     assert(rows(0).get(0) == 10)
-    assert(rows(0).get(1) == 66)
-    assert(rows(0).get(2) == 82.35f)
-    assert(rows(0).get(3) == 137.52f)
+    assert(rows(0).get(1) == 83)
+    assert(rows(0).get(2) == 10.26f)
+    assert(rows(0).get(3) == 17.33f)
 
     assert(rows(1).get(0) == 10)
-    assert(rows(1).get(1) == 83)
-    assert(rows(1).get(2) == 10.26f)
-    assert(rows(1).get(3) == 17.33f)
+    assert(rows(1).get(1) == 66)
+    assert(rows(1).get(2) == 82.35f)
+    assert(rows(1).get(3) == 137.52f)
 
     assert(rows(2).get(0) == 11)
     assert(rows(2).get(1) == 68)
@@ -546,8 +527,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
       s"""SELECT strkey, ss_item_sk, ss_ticket_number, count(1)
          |FROM store_sales_stringformat
          |WHERE ss_ticket_number >= 10 and ss_ticket_number <= 20
-         |GROUP BY strkey, ss_item_sk, ss_ticket_number
-         |ORDER BY strkey, ss_item_sk, ss_ticket_number"""
+         |GROUP BY strkey, ss_item_sk, ss_ticket_number"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -558,14 +538,14 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(2) == 10)
     assert(rows(0).get(3) == 1)
 
-    assert(rows(1).get(0) == "16335000000010")
-    assert(rows(1).get(1) == 16335)
-    assert(rows(1).get(2) == 10)
+    assert(rows(1).get(0) == "18669000000011")
+    assert(rows(1).get(1) == 18669)
+    assert(rows(1).get(2) == 11)
     assert(rows(1).get(3) == 1)
 
-    assert(rows(2).get(0) == "18669000000011")
-    assert(rows(2).get(1) == 18669)
-    assert(rows(2).get(2) == 11)
+    assert(rows(2).get(0) == "16335000000010")
+    assert(rows(2).get(1) == 16335)
+    assert(rows(2).get(2) == 10)
     assert(rows(2).get(3) == 1)
   }
 
@@ -574,8 +554,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
       s"""SELECT strkey, ss_item_sk, ss_ticket_number, SUM(ss_wholesale_cost) AS sum_wholesale_cost
          |FROM store_sales_stringformat
          |WHERE ss_ticket_number >= 10 and ss_ticket_number <= 20
-         |GROUP BY strkey, ss_item_sk, ss_ticket_number
-         |ORDER BY strkey, ss_item_sk, ss_ticket_number"""
+         |GROUP BY strkey, ss_item_sk, ss_ticket_number"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -587,15 +566,15 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(2) == 10)
     assert(rows(0).get(3) == 10.260000228881836)
 
-    assert(rows(1).get(0) == "16335000000010")
-    assert(rows(1).get(1) == 16335)
-    assert(rows(1).get(2) == 10)
-    assert(rows(1).get(3) == 82.3499984741211)
+    assert(rows(1).get(0) == "18669000000011")
+    assert(rows(1).get(1) == 18669)
+    assert(rows(1).get(2) == 11)
+    assert(rows(1).get(3) == 7.159999847412109)
 
-    assert(rows(2).get(0) == "18669000000011")
-    assert(rows(2).get(1) == 18669)
-    assert(rows(2).get(2) == 11)
-    assert(rows(2).get(3) == 7.159999847412109)
+    assert(rows(2).get(0) == "16335000000010")
+    assert(rows(2).get(1) == 16335)
+    assert(rows(2).get(2) == 10)
+    assert(rows(2).get(3) == 82.3499984741211)
   }
 
 
@@ -733,11 +712,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   }
 
   test("Query 27") {
-    val sql =
-      s"""SELECT * FROM store_sales_stringformat
-         |WHERE ss_ticket_number + 0 = 10
-         |AND ss_sold_date_sk + 0 > 0"""
-        .stripMargin
+    val sql = "SELECT * FROM store_sales_stringformat WHERE ss_ticket_number + 0 = 10 and ss_sold_date_sk + 0 > 0"
     val rows = runSql(sql)
     // printRows(rows)
 
@@ -757,8 +732,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   test("Query 28") {
     val sql =
       s"""SELECT * FROM store_sales_stringformat
-         |WHERE ss_cdemo_sk IS NULL"""
-        .stripMargin
+         |WHERE ss_cdemo_sk IS NULL""".stripMargin
     val rows = runSql(sql)
     // printRows(rows)
 
@@ -783,8 +757,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   test("Query 30") {
     val sql =
       s"""SELECT * FROM store_sales_stringformat
-         |WHERE ss_cdemo_sk IS NOT NULL
-         |AND ss_ticket_number = 29"""
+         |WHERE ss_cdemo_sk IS NOT NULL AND ss_ticket_number = 29"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -804,8 +777,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   test("Query 31") {
     val sql =
       s"""SELECT * FROM store_sales_stringformat
-         |WHERE ss_cdemo_sk IS NULL
-         |AND ss_ticket_number = 29"""
+         |WHERE ss_cdemo_sk IS NULL AND ss_ticket_number = 29"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -846,5 +818,14 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(2).get(8) == null)
     assert(rows(2).get(22) == null)
     assert(rows(2).get(23) == -4398.98f)
+  }
+
+
+  private def printRows(rows: Array[Row]) = {
+    println("======= QUERY RESULTS ======")
+    for (i <- 0 until rows.size) {
+      println(rows(i).mkString(" | "))
+    }
+    println("============================")
   }
 }

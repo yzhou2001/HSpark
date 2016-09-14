@@ -42,11 +42,10 @@ class CheckDirEndPointImpl
   extends CheckDirProtos.CheckDirService with Coprocessor with CoprocessorService {
 
   private lazy val logger = Logger.getLogger(getClass.getName)
-  private var env: RegionCoprocessorEnvironment = null
 
   override def start(env: CoprocessorEnvironment) = {
     env match {
-      case e: RegionCoprocessorEnvironment =>
+      case e: RegionCoprocessorEnvironment => e
       case _ => throw new CoprocessorException("Must be loaded on a table region!")
     }
   }

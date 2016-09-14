@@ -15,23 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.hbase
+package org.apache.spark.hsc.sql.hbase
+
+import org.apache.hadoop.hbase.TableName
+import org.apache.spark.sql.hbase.{TestHbase, TestBaseWithSplitData}
 
 /**
  * Test insert / query against the table
  */
 class HBaseBasicOperationSuite extends TestBaseWithSplitData {
-
   import org.apache.spark.sql.hbase.TestHbase._
 
   override def afterAll() = {
-    if (TestHbase.hbaseAdmin.tableExists("ht0")) {
-      TestHbase.hbaseAdmin.disableTable("ht0")
-      TestHbase.hbaseAdmin.deleteTable("ht0")
+    if (TestHbase.hbaseAdmin.tableExists(TableName.valueOf("ht0"))) {
+      TestHbase.hbaseAdmin.disableTable(TableName.valueOf("ht0"))
+      TestHbase.hbaseAdmin.deleteTable(TableName.valueOf("ht0"))
     }
-    if (TestHbase.hbaseAdmin.tableExists("ht1")) {
-      TestHbase.hbaseAdmin.disableTable("ht1")
-      TestHbase.hbaseAdmin.deleteTable("ht1")
+    if (TestHbase.hbaseAdmin.tableExists(TableName.valueOf("ht1"))) {
+      TestHbase.hbaseAdmin.disableTable(TableName.valueOf("ht1"))
+      TestHbase.hbaseAdmin.deleteTable(TableName.valueOf("ht1"))
     }
     super.afterAll()
   }
@@ -39,7 +41,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Insert Into table in StringFormat") {
     sql( """CREATE TABLE tb0 (column2 INTEGER, column1 INTEGER, column4 FLOAT,
           column3 SHORT, PRIMARY KEY(column1))
-          MAPPED BY (testNamespace.ht0, COLS=[column2=family0.qualifier0, column3=family1.qualifier1,
+          MAPPED BY (default.ht0, COLS=[column2=family0.qualifier0, column3=family1.qualifier1,
           column4=family2.qualifier2]) IN StringFormat"""
     )
 
@@ -51,6 +53,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
     sql( """SELECT * FROM tb0 where column2 > 200""").show
 
     sql( """DROP TABLE tb0""")
+    dropNativeHbaseTable("ht0")
   }
 
   test("Insert and Query Single Row") {
@@ -70,6 +73,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
         |OR (column1 = 1028 AND column2 ="abd")""".stripMargin).collect().length == 2)
 
     sql( """DROP TABLE tb1""")
+    dropNativeHbaseTable("ht1")
   }
 
   test("Insert and Query Single Row in StringFormat") {
@@ -98,6 +102,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
       .collect().zip(Seq("row2", "row3")).foreach{case (r,s) => assert(r.getString(0) == s)}
 
     sql( """DROP TABLE tb1""")
+    dropNativeHbaseTable("ht2")
   }
 
   test("Select test 0") {
@@ -120,7 +125,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Point Aggregate Query") {
     sql( """CREATE TABLE tb2 (column2 INTEGER, column1 INTEGER, column4 FLOAT,
           column3 SHORT, PRIMARY KEY(column1, column2))
-          MAPPED BY (testNamespace.ht0, COLS=[column3=family1.qualifier1,
+          MAPPED BY (default.ht0, COLS=[column3=family1.qualifier1,
           column4=family2.qualifier2])"""
     )
     sql( """INSERT INTO TABLE tb2 SELECT col4,col4,col6,col3 FROM ta""")

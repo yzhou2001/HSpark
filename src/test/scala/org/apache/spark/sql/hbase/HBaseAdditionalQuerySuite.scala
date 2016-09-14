@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.hbase
 
+import org.apache.hadoop.hbase.TableName
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.execution.Exchange
@@ -26,6 +27,7 @@ import org.apache.spark.sql.types._
 class HBaseAdditionalQuerySuite extends TestBase {
 
   override protected def beforeAll() = {
+    super.beforeAll()
     createTableTeacher()
     createTablePeople()
     createTableFromParquet()
@@ -48,7 +50,12 @@ class HBaseAdditionalQuerySuite extends TestBase {
       generateRowKey(Array(4096, UTF8String("cc"), 0), 7),
       generateRowKey(Array(4096, UTF8String("cc"), 1000))
     )
-    TestHbase.catalog.createHBaseUserTable("presplit_table", Set("cf"), splitKeys, useCoprocessor)
+    if (TestHbase.catalog.tableExists(Seq("presplit_table")))
+    {
+      dropNativeHbaseTable("presplit_table")
+    }
+    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
+      Set("cf"), splitKeys, useCoprocessor)
 
     val sql =
       s"""CREATE TABLE testblk(col1 INT, col2 STRING, col3 INT, col4 STRING,
@@ -103,6 +110,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
   override protected def afterAll() = {
     dropTableTeacher()
     dropTablePeople()
+    super.afterAll()
   }
 
   def dropTableTestblk() = {

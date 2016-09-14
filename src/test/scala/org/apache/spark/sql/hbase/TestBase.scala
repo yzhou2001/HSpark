@@ -106,6 +106,7 @@ abstract class TestBase
   override protected def afterAll(): Unit = {
     val msg = s"Test ${getClass.getName} completed at ${(new java.util.Date).toString} duration=${((new java.util.Date).getTime - startTime) / 1000}"
     logInfo(msg)
+    super.afterAll()
   }
 
   val CompareTol = 1e-6
@@ -160,8 +161,8 @@ abstract class TestBase
   def dropNativeHbaseTable(tableName: String) = {
     try {
       val hbaseAdmin = TestHbase.hbaseAdmin
-      hbaseAdmin.disableTable(tableName)
-      hbaseAdmin.deleteTable(tableName)
+      hbaseAdmin.disableTable(TableName.valueOf(tableName))
+      hbaseAdmin.deleteTable(TableName.valueOf(tableName))
     } catch {
       case e: TableExistsException =>
         logError(s"Table already exists $tableName", e)
@@ -172,13 +173,5 @@ abstract class TestBase
     // then load data into table
     val loadSql = s"LOAD PARALL DATA LOCAL INPATH '$loadFile' INTO TABLE $tableName"
     runSql(loadSql)
-  }
-
-  def printRows(rows: Array[Row]) = {
-    println("======= QUERY RESULTS ======")
-    for (i <- rows.indices) {
-      println(rows(i).mkString(" | "))
-    }
-    println("============================")
   }
 }

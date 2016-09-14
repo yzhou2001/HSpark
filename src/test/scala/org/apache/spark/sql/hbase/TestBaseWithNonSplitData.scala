@@ -52,8 +52,9 @@ class TestBaseWithNonSplitData extends TestBase {
   }
 
   override protected def afterAll() = {
-    super.afterAll()
     runSql("DROP TABLE " + TestTableName)
+    dropNativeHbaseTable(TestHBaseTableName)
+    super.afterAll()
   }
 
   def createTable(tableName: String, hbaseTable: String, creationSQL: String) = {
@@ -62,7 +63,7 @@ class TestBaseWithNonSplitData extends TestBase {
       createNativeHbaseTable(hbaseTable, TestHbaseColFamilies)
     }
 
-    if (TestHbase.catalog.checkLogicalTableExist(tableName)) {
+    if (TestHbase.catalog.tableExists(Seq(tableName))) {
       val dropSql = s"DROP TABLE $tableName"
       runSql(dropSql)
     }

@@ -17,35 +17,30 @@
 
 package org.apache.spark.sql.hbase
 
-import org.apache.hadoop.hbase.client.HBaseAdmin
 import org.apache.hadoop.hbase.{HBaseTestingUtility, MiniHBaseCluster}
 import org.apache.spark.{SparkConf, SparkContext}
 
 
-object TestHbase
-  extends HBaseSQLContext(
-    new SparkContext("local[2]", "TestSQLContext", new SparkConf(true)
-      .set("spark.hadoop.hbase.zookeeper.quorum", "localhost"))) {
+object TestHbase extends HBaseSQLContext(
+  new SparkContext("local[2]", "TestSQLContext", new SparkConf(true)
+    .set("spark.hadoop.hbase.zookeeper.quorum", "localhost"))) {
 
   @transient val testUtil: HBaseTestingUtility =
     new HBaseTestingUtility(sparkContext.hadoopConfiguration)
 
-  val nRegionServers: Int = 1
-  val nDataNodes: Int = 1
-  val nMasters: Int = 1
+  testUtil.startMiniZKCluster
+  logDebug(s"Spin up hbase minicluster with 1 master, 1 RS, 1 dataNode")
 
-  logDebug(s"Spin up hbase minicluster w/ $nMasters master, $nRegionServers RS, $nDataNodes dataNodes")
-
-  @transient val cluster: MiniHBaseCluster = testUtil.startMiniCluster(nMasters, nRegionServers, nDataNodes)
+  @transient val cluster: MiniHBaseCluster = testUtil.startMiniHBaseCluster(1, 1)
   logInfo(s"Started HBaseMiniCluster with regions = ${cluster.countServedRegions}")
 
   logInfo(s"Configuration zkPort="
     + s"${sparkContext.hadoopConfiguration.get("hbase.zookeeper.property.clientPort")}")
 
-  @transient lazy val hbaseAdmin: HBaseAdmin = new HBaseAdmin(sparkContext.hadoopConfiguration)
-
   // The following operation will initialize the HBaseCatalog.
   // And it should be done after starting MiniHBaseCluster
   catalog.deploySuccessfully_internal = Some(true)
   catalog.pwdIsAccessible = true
+
+  def hbaseAdmin = catalog.admin
 }

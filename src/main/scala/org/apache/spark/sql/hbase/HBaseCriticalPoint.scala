@@ -511,7 +511,6 @@ object RangeCriticalPoint {
           mid = mid + incr
           cmp = comp(src, tgt(mid))
         }
-        newLimit = prevEq - incr // break the outer loop
       } else {
         mid = (prevEq + newLimit) / 2
         cmp = comp(src, tgt(mid))
@@ -578,7 +577,7 @@ object RangeCriticalPoint {
           } else {
             prevSmaller = binarySearchEquality(mid, prevLarger, src, tgt, threshold, comp)
           }
-          right = left - 1 // break the outer loop
+          right = left // break the outer loop
         } else if (cmp < 0) {
           prevLarger = mid
           right = mid - 1
