@@ -41,7 +41,8 @@ class HBaseSQLContext(sc: SparkContext) extends SQLContext(sc) {
   override protected[sql] lazy val catalog: HBaseCatalog =
     new HBaseCatalog(this, sc.hadoopConfiguration)
 
-  experimental.extraStrategies = Seq((new SparkPlanner with HBaseStrategies).HBaseDataSource)
+  experimental.extraStrategies = Seq((new SparkPlanner(conf, sc, Nil)
+    with HBaseStrategies).HBaseDataSource)
 
   @transient
   override protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {

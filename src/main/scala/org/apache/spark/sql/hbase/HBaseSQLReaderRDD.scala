@@ -19,6 +19,7 @@ package org.apache.spark.sql.hbase
 import org.apache.hadoop.hbase.client.{Get, Result, ResultScanner, Scan}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark._
+import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
