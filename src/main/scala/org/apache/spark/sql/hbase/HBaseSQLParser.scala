@@ -17,10 +17,9 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.catalyst.SqlParser
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.RunnableCommand
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hbase.execution._
 import org.apache.spark.sql.types._
 import org.apache.spark.util.Utils
