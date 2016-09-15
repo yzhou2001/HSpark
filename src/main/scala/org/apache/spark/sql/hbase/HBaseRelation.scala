@@ -52,18 +52,18 @@ class HBaseSource extends RelationProvider {
     val encodingFormat = parameters("encodingFormat")
     val colsSeq = parameters("colsSeq").split(",")
     val keyCols = parameters("keyCols").split(";")
-      .map { case c => val cols = c.split(","); (cols(0), cols(1))}
+      .map { c => val cols = c.split(","); (cols(0), cols(1)) }
     val nonKeyCols = parameters("nonKeyCols").split(";")
       .filterNot(_ == "")
-      .map { case c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3))}
+      .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
 
     val keyMap: Map[String, String] = keyCols.toMap
     val allColumns = colsSeq.map {
-      case name =>
+      name =>
         if (keyMap.contains(name)) {
           KeyColumn(
             name,
-            catalog.getDataType(keyMap.get(name).get),
+            catalog.getDataType(keyMap(name)),
             keyCols.indexWhere(_._1 == name))
         } else {
           val nonKeyCol = nonKeyCols.find(_._1 == name).get
@@ -229,7 +229,7 @@ private[hbase] case class HBaseRelation(
         logger.info(s"Number of HBase regions for " +
           s"table ${htable.getName.getNameAsString}: ${regionLocations.size}")
         regionLocations.zipWithIndex.map {
-          case p =>
+          p =>
             val start: Option[HBaseRawType] = {
               if (p._1.getRegionInfo.getStartKey.isEmpty) {
                 None
@@ -860,7 +860,7 @@ private[hbase] case class HBaseRelation(
         }
         if (addColumn && nkcols.nonEmpty && nkcols.size < nonKeyColumns.size) {
           nkcols.foreach {
-            case p =>
+            p =>
               val nkc = nonKeyColumns.find(_.sqlName == p).get
               scan.addColumn(nkc.familyRaw, nkc.qualifierRaw)
           }
@@ -970,7 +970,7 @@ private[hbase] case class HBaseRelation(
       result.head.getRowArray, keyColumns, result.head.getRowLength, result.head.getRowOffset)
     projections.foreach {
       p =>
-        columnMap.get(p._1.name).get match {
+        columnMap(p._1.name) match {
           case column: NonKeyColumn =>
             val kv = getColumnLatestCell(column.familyRaw, column.qualifierRaw)
             setColumn(kv, p, row, bytesUtils)
@@ -989,7 +989,7 @@ private[hbase] case class HBaseRelation(
     lazy val rowKeys = HBaseKVHelper.decodingRawKeyColumns(result.getRow, keyColumns)
     projections.foreach {
       p =>
-        columnMap.get(p._1.name).get match {
+        columnMap(p._1.name) match {
           case column: NonKeyColumn =>
             val kv: Cell = result.getColumnLatestCell(column.familyRaw, column.qualifierRaw)
             setColumn(kv, p, row, bytesUtils)

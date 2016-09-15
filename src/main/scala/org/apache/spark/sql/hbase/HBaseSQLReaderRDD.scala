@@ -275,9 +275,8 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         val gets: java.util.List[Get] = new java.util.ArrayList[Get]()
 
         val distinctProjectionList = output.distinct
-        val nonKeyColumns = relation.nonKeyColumns.filter {
-          case nkc => distinctProjectionList.exists(nkc.sqlName == _.name)
-        }
+        val nonKeyColumns = relation.nonKeyColumns
+          .filter(nkc => distinctProjectionList.exists(nkc.sqlName == _.name))
 
         def generateGet(range: MDCriticalPointRange[_]): Get = {
           val rowKey = constructRowKey(range, isStart = true)

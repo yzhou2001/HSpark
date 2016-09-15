@@ -137,7 +137,7 @@ class SparkSqlRegionObserver extends BaseRegionObserver with Logging {
                                s: RegionScanner) = {
     val serializedPartitionIndex = scan.getAttribute(CoprocessorConstants.COINDEX)
     if (serializedPartitionIndex == null) {
-      ("Work without coprocessor")
+      logDebug("Work without coprocessor")
       super.postScannerOpen(e, scan, s)
     } else {
       logDebug("Work with coprocessor")

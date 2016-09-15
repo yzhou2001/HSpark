@@ -153,7 +153,7 @@ object BinaryBytesUtils extends BytesUtils{
   def toInt(input: HBaseRawType, offset: Int, length: Int = 0): Int = {
     // Flip sign bit back
     var v: Int = input(offset) ^ 0x80
-    for (i <- 1 to Bytes.SIZEOF_INT - 1) {
+    for (i <- 1 until Bytes.SIZEOF_INT) {
       v = (v << 8) + (input(i + offset) & 0xff)
     }
     v
@@ -162,7 +162,7 @@ object BinaryBytesUtils extends BytesUtils{
   def toLong(input: HBaseRawType, offset: Int, length: Int = 0): Long = {
     // Flip sign bit back
     var v: Long = input(offset) ^ 0x80
-    for (i <- 1 to Bytes.SIZEOF_LONG - 1) {
+    for (i <- 1 until Bytes.SIZEOF_LONG) {
       v = (v << 8) + (input(i + offset) & 0xff)
     }
     v
@@ -264,7 +264,7 @@ object StringBytesUtils extends BytesUtils{
   }
 
   def toString(input: HBaseRawType, offset: Int, length: Int): String = {
-    toUTF8String(input, offset, length).toString()
+    toUTF8String(input, offset, length).toString
   }
 
   def toUTF8String(input: HBaseRawType, offset: Int, length: Int): UTF8String = {

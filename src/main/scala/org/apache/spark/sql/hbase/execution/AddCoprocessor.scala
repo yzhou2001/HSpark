@@ -128,7 +128,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
           //
           // Thus, for the project contains those expressions,
           // we will process them without coprocessor.
-          case proj: Project if needToCreateSubplan => {
+          case proj: Project if needToCreateSubplan =>
             val foundExprShouldBeSkipped = proj.expressions.exists(exp => {
               var found = false
               exp transform {
@@ -153,7 +153,6 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
               needToCreateSubplanSeq = needToCreateSubplanSeq.init :+ false
             }
             proj
-          }
         }
         // Use coprocessor even without shuffling
         if (needToCreateSubplan) generateNewSubplan(result) else result

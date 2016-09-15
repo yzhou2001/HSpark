@@ -82,11 +82,10 @@ private[hbase] class CriticalPointRange[+T](start: Option[T], startInclusive: Bo
     (nextDimCriticalPointRanges, invalid) match {
       case (Nil, true) => Nil
       case (Nil, false) => Seq(new MDCriticalPointRange(prefix.toSeq, this, dt))
-      case _ => {
+      case _ =>
         prefix += ((start.get, dt))
         require(isPoint, "Internal Logical Error: point range expected")
         nextDimCriticalPointRanges.map(_.flatten(prefix.clone())).reduceLeft(_ ++ _)
-      }
     }
   }
 
@@ -454,7 +453,7 @@ object RangeCriticalPoint {
         prRes._1 == null || prRes._1.asInstanceOf[Boolean]
       })
 
-      if (!cpRanges.isEmpty && qualifiedCPRanges.isEmpty) {
+      if (cpRanges.nonEmpty && qualifiedCPRanges.isEmpty) {
         // all children are disqualified
         (true, Nil)
       }

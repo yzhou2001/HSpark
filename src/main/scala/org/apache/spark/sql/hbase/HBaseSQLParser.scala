@@ -128,7 +128,7 @@ class HBaseSQLParser extends SqlParser {
         // Get Nonkey Info
         val nonKeyCols = dataTypeOfNonkeyCols.map {
           case (name, typeOfData) =>
-            val infoElem = infoMap.get(name).get
+            val infoElem = infoMap(name)
             (name, typeOfData, infoElem._1, infoElem._2)
         }
 

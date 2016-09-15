@@ -156,7 +156,7 @@ private[hbase] trait HBaseStrategies {
             else if (keysForGroup.size == hbaseRelation.keyColumns.size) aggrForAll
             else {
               val partitionsAfterFilter = scanNode.result.partitions
-              val eachPartitionApart = (0 to partitionsAfterFilter.length - 2).forall { case i =>
+              val eachPartitionApart = (0 to partitionsAfterFilter.length - 2).forall { i =>
                 val headEnd = partitionsAfterFilter(i).asInstanceOf[HBasePartition]
                   .end.get.asInstanceOf[HBaseRawType]
                 val tailStart = partitionsAfterFilter(i + 1).asInstanceOf[HBasePartition]

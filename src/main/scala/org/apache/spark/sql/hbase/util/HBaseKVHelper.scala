@@ -32,7 +32,7 @@ object HBaseKVHelper {
    */
   def encodingRawKeyColumns(rawKeyColumns: Seq[(HBaseRawType, DataType)]): HBaseRawType = {
     var length = 0
-    for (i <- 0 until rawKeyColumns.length) {
+    for (i <- rawKeyColumns.indices) {
       length += rawKeyColumns(i)._1.length
       if (rawKeyColumns(i)._2 == StringType && i < rawKeyColumns.length - 1) {
         length += 1
@@ -72,7 +72,7 @@ object HBaseKVHelper {
       index + keyLength
     }
     keyColumns.map {
-      case c =>
+      c =>
         if (index >= limit) (-1, -1)
         else {
           val offset = index

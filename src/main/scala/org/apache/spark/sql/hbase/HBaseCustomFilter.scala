@@ -579,7 +579,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
   private def fullEvaluation(kvs: java.util.List[Cell]) = {
     resetRow(workingRow)
     cellMap.clear()
-    for (i <- 0 to kvs.size() - 1) {
+    for (i <- 0 until kvs.size()) {
       val item = kvs.get(i)
       val data = CellUtil.cloneValue(item)
       if (data.nonEmpty) {
@@ -594,7 +594,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
       }
     }
     for (item <- remainingPredicate) {
-      relation.columnMap.get(item.name).get match {
+      relation.columnMap(item.name) match {
         case nkc: NonKeyColumn =>
           val result = predicateMap.find(a => a._1 == nkc.sqlName).get
           val value = cellMap.get(nkc)
