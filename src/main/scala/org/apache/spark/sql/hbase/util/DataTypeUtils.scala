@@ -16,11 +16,14 @@
 */
 package org.apache.spark.sql.hbase.util
 
+import java.nio.ByteBuffer
+
 import org.apache.hadoop.hbase.filter.{BinaryComparator, ByteArrayComparable}
-import org.apache.spark.sql.catalyst.expressions.{Literal, MutableRow, Row}
-import org.apache.spark.sql.execution.SparkSqlSerializer
+import org.apache.spark.serializer.JavaSerializer
+import org.apache.spark.sql.catalyst.expressions.{Literal, MutableRow}
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.Row
 
 /**
  * Data Type conversion utilities
@@ -69,7 +72,7 @@ object DataTypeUtils {
       case LongType => bu.toBytes(src.asInstanceOf[Long])
       case ShortType => bu.toBytes(src.asInstanceOf[Short])
       case StringType => bu.toBytes(src)
-      case _ => SparkSqlSerializer.serialize[Any](src) //TODO
+      case _ => new JavaSerializer(null).newInstance().serialize[Any](src).array //TODO
     }
   }
 
@@ -98,7 +101,8 @@ object DataTypeUtils {
       case LongType => row.setLong(index, bytesUtils.toLong(src, offset, length))
       case ShortType => row.setShort(index, bytesUtils.toShort(src, offset, length))
       case StringType => row.update(index, bytesUtils.toUTF8String(src, offset, length))
-      case _ => row.update(index, SparkSqlSerializer.deserialize[Any](src)) //TODO
+      case _ => row.update(index, new JavaSerializer(null).newInstance()
+        .deserialize[Any](ByteBuffer.wrap(src))) //TODO
     }
   }
 

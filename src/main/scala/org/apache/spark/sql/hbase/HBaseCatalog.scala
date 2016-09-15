@@ -26,11 +26,10 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase._
-import org.apache.log4j.Logger
-import org.apache.spark.Logging
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.catalyst.analysis.{Catalog, OverrideCatalog}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Subquery}
+import org.apache.spark.sql.catalog.Catalog
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.{CatalystConf, SimpleCatalystConf}
 import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.types._
@@ -78,8 +77,6 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
 
   @transient
   lazy val connection = ConnectionFactory.createConnection(configuration)
-
-  lazy val logger = Logger.getLogger(getClass.getName)
 
   lazy val relationMapCache = new mutable.HashMap[String, HBaseRelation]
     with mutable.SynchronizedMap[String, HBaseRelation]
@@ -161,12 +158,12 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
 
         deploySuccessfully_internal = Some(!results.isEmpty)
         if (results.isEmpty) {
-          logger.warn( """CheckDirEndPoint coprocessor deployment failed.""")
+          logWarning("""CheckDirEndPoint coprocessor deployment failed.""")
         }
 
         pwdIsAccessible = !results.containsValue(false)
         if (!pwdIsAccessible) {
-          logger.warn(
+          logWarning(
             """The directory of a certain regionserver is not accessible,
             |please add 'cd ~' before 'start regionserver' in your regionserver start script.""")
         }
@@ -348,8 +345,9 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
     if (hbaseRelation.isEmpty) {
       sys.error(s"Table Not Found: $tableName")
     } else {
-      val tableWithQualifiers = Subquery(tableName, hbaseRelation.get.logicalRelation)
-      alias.map(a => Subquery(a.toLowerCase, tableWithQualifiers)).getOrElse(tableWithQualifiers)
+      val tableWithQualifiers = SubqueryAlias(tableName, hbaseRelation.get.logicalRelation)
+      alias.map(a => SubqueryAlias(a.toLowerCase, tableWithQualifiers))
+        .getOrElse(tableWithQualifiers)
     }
   }
 

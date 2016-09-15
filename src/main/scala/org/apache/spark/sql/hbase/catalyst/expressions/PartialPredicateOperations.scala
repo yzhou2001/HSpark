@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hbase.types.RangeType._
 import org.apache.spark.sql.hbase.types._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.Row
 
 object PartialPredicateOperations {
   // When the checkNullness argument of the partialReduce method is false, the partial

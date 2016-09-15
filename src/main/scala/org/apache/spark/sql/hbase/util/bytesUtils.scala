@@ -19,6 +19,7 @@ package org.apache.spark.sql.hbase.util
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 
 trait BytesUtils {
   def create(dataType: DataType): ToBytesUtils

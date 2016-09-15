@@ -17,8 +17,7 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{Get, Table, Put, Result, Scan,
-                                       Connection, ConnectionFactory}
+import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Get, Put, Result, Scan, Table}
 import org.apache.hadoop.hbase.filter._
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, _}
@@ -27,12 +26,14 @@ import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.catalyst.NotPusher
 import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.hbase.types.Range
 import org.apache.spark.sql.hbase.util._
-import org.apache.spark.sql.sources.{BaseRelation, CatalystScan, InsertableRelation, LogicalRelation, RelationProvider}
+import org.apache.spark.sql.sources.{BaseRelation, CatalystScan, InsertableRelation, RelationProvider}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.Row
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._

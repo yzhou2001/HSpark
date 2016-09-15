@@ -20,7 +20,8 @@ package org.apache.spark.sql.hbase
 import java.io.File
 
 import jline._
-import org.apache.spark.{Logging, SparkConf, SparkContext}
+import org.apache.spark.internal.Logging
+import org.apache.spark.{SparkConf, SparkContext}
 
 /**
  * HBaseSQLCliDriver

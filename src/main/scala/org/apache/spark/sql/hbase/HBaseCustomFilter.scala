@@ -477,7 +477,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
    */
   private def resetRow(row: GenericMutableRow) = {
     // reset the row
-    for (i <- 0 to row.length - 1) {
+    for (i <- 0 until row.numFields) {
       row.update(i, null)
     }
   }

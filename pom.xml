@@ -21,53 +21,47 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <artifactId>hspark</artifactId>
+  <packaging>jar</packaging>
+  <groupId>HSpark</groupId>
+  <version>1.0.0</version>
+  <name>HSpark</name>
+  <url>https://github.com/yzhou2001/HSpark</url>
+
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>14</version>
   </parent>
-  <groupId>Huawei-Spark</groupId>
-  <artifactId>spark-sql-on-hbase</artifactId>
-  <version>1.0.0</version>
-  <packaging>jar</packaging>
-  <name>Spark Project HBase</name>
-  <url>http://spark.apache.org/</url>
 
   <properties>
-    <sbt.project.name>hbase</sbt.project.name>
-    <project.version>1.4.0</project.version>
-    <spark.version>1.4.0</spark.version>
+    <sbt.project.name>hspark</sbt.project.name>
+    <spark.version>2.0.0</spark.version>
     <hadoop.version>2.4.0</hadoop.version>
     <hbase.version>1.1.2</hbase.version>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <akka.group>org.spark-project.akka</akka.group>
-    <akka.version>2.3.4-spark</akka.version>
-    <java.version>1.6</java.version>
-    <scala.macros.version>2.0.1</scala.macros.version>
+    <akka.version>2.3.11</akka.version>
+    <java.version>1.8</java.version>
     <mesos.version>0.21.0</mesos.version>
     <mesos.classifier>shaded-protobuf</mesos.classifier>
-    <slf4j.version>1.7.5</slf4j.version>
-    <log4j.version>1.2.17</log4j.version>
     <protobuf.version>2.5.0</protobuf.version>
     <yarn.version>${hadoop.version}</yarn.version>
     <zookeeper.version>3.4.5</zookeeper.version>
     <parquet.version>1.6.0rc3</parquet.version>
     <jblas.version>1.2.3</jblas.version>
     <jetty.version>8.1.14.v20131031</jetty.version>
-    <chill.version>0.5.0</chill.version>
     <codahale.metrics.version>3.0.0</codahale.metrics.version>
     <avro.version>1.7.6</avro.version>
-    <avro.mapred.classifier></avro.mapred.classifier>
     <jets3t.version>0.7.1</jets3t.version>
     <aws.java.sdk.version>1.8.3</aws.java.sdk.version>
     <aws.kinesis.client.version>1.1.0</aws.kinesis.client.version>
     <commons.httpclient.version>4.2.6</commons.httpclient.version>
     <commons.math3.version>3.1.1</commons.math3.version>
     <test_classpath_file>${project.build.directory}/spark-test-classpath.txt</test_classpath_file>
-    <scala.version>2.10.4</scala.version>
-    <scala.binary.version>2.10</scala.binary.version>
+    <scala.version>2.11.7</scala.version>
+    <scala.binary.version>2.11</scala.binary.version>
     <jline.version>${scala.version}</jline.version>
     <jline.groupid>org.scala-lang</jline.groupid>
     <codehaus.jackson.version>1.8.8</codehaus.jackson.version>
@@ -1280,15 +1274,6 @@
             <javacArg>-target</javacArg>
             <javacArg>${java.version}</javacArg>
           </javacArgs>
-          <!-- The following plugin is required to use quasiquotes in Scala 2.10 and is used
-               by Spark SQL for code generation. -->
-          <compilerPlugins>
-            <compilerPlugin>
-              <groupId>org.scalamacros</groupId>
-              <artifactId>paradise_${scala.version}</artifactId>
-              <version>${scala.macros.version}</version>
-            </compilerPlugin>
-          </compilerPlugins>
         </configuration>
       </plugin>
       <plugin>
