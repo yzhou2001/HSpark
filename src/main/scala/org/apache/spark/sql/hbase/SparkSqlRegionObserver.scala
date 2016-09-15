@@ -22,9 +22,9 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor._
 import org.apache.hadoop.hbase.regionserver._
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.log4j.Logger
 import org.apache.spark._
 import org.apache.spark.executor.TaskMetrics
+import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
@@ -129,8 +129,7 @@ abstract class BaseRegionScanner extends RegionScanner {
   override def nextRaw(result: java.util.List[Cell],  scannerContext: ScannerContext) = next(result, scannerContext)  //limit: Int=>scannerContext: ScannerContext
 }
 
-class SparkSqlRegionObserver extends BaseRegionObserver {
-  lazy val logger = Logger.getLogger(getClass.getName)
+class SparkSqlRegionObserver extends BaseRegionObserver with Logging {
   lazy val EmptyArray = Array[Byte]()
 
   override def postScannerOpen(e: ObserverContext[RegionCoprocessorEnvironment],
@@ -138,10 +137,10 @@ class SparkSqlRegionObserver extends BaseRegionObserver {
                                s: RegionScanner) = {
     val serializedPartitionIndex = scan.getAttribute(CoprocessorConstants.COINDEX)
     if (serializedPartitionIndex == null) {
-      logger.debug("Work without coprocessor")
+      ("Work without coprocessor")
       super.postScannerOpen(e, scan, s)
     } else {
-      logger.debug("Work with coprocessor")
+      logDebug("Work with coprocessor")
       val partitionIndex: Int = Bytes.toInt(serializedPartitionIndex)
       val serializedOutputDataType = scan.getAttribute(CoprocessorConstants.COTYPE)
       val outputDataType: Seq[DataType] =
