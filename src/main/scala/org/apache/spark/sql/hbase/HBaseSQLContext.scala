@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase.execution.{AddCoprocessor, HBaseStrategies}
 import org.apache.spark.sql.internal.SQLConf
 
-class HBaseSQLContext(sc: SparkContext) extends SQLContext(sc) {
+class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
   self =>
 
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
