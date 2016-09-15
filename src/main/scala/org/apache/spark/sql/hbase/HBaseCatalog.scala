@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hbase
 
 import java.io._
+import java.util.concurrent.ConcurrentMap
 import java.util.zip._
 
 import org.apache.hadoop.conf.Configuration
@@ -34,7 +35,6 @@ import org.apache.spark.sql.catalyst.{CatalystConf, SimpleCatalystConf}
 import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.types._
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -78,8 +78,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
   @transient
   lazy val connection = ConnectionFactory.createConnection(configuration)
 
-  lazy val relationMapCache = new mutable.HashMap[String, HBaseRelation]
-    with mutable.SynchronizedMap[String, HBaseRelation]
+  lazy val relationMapCache = new ConcurrentMap[String, HBaseRelation]
 
   private[sql] def admin: Admin = {
     if (admin_.isEmpty) {
@@ -91,7 +90,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
   private var admin_ : Option[Admin] = None
 
   private[sql] def stopAdmin(): Unit = {
-    admin_.map(_.close())
+    admin_.foreach(_.close())
     admin_ = None
   }
 
@@ -131,7 +130,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
     hTableDescriptor.hasCoprocessor("org.apache.spark.sql.hbase.SparkSqlRegionObserver")
   }
 
-  @transient protected[hbase] var deploySuccessfully_internal: Option[Boolean] = null
+  @transient protected[hbase] var deploySuccessfully_internal: Option[Boolean] = _
 
   def deploySuccessfully: Option[Boolean] = {
     if (deploySuccessfully_internal == null) {
@@ -200,7 +199,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
           hbaseContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
       } else {
         families.foreach {
-          case family =>
+          family =>
             if (!checkFamilyExists(hTableName, family)) {
               throw new Exception(s"HBase table does not contain column family: $family")
             }
@@ -334,7 +333,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
       result = scanner.next()
     }
     metadataTable.close()
-    tables.toSeq
+    tables
   }
 
   override def lookupRelation(tableIdentifier: Seq[String],
