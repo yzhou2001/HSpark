@@ -104,7 +104,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
   private var remainingPredicateBoundRef: Expression = null
 
   // the working row
-  private var workingRow: GenericMutableRow = null
+  private var workingRow: MutableRow = null
 
   /**
    * constructor method

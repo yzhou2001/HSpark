@@ -17,13 +17,14 @@
 
 package org.apache.spark.sql.hbase
 
+import java.util.Properties
+
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.coprocessor._
 import org.apache.hadoop.hbase.regionserver._
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark._
-import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions._
@@ -31,6 +32,7 @@ import org.apache.spark.sql.catalyst.expressions.codegen.GeneratePredicate
 import org.apache.spark.sql.hbase.util.DataTypeUtils
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.catalyst.InternalRow
 
 /**
  * HBaseCoprocessorSQLReaderRDD:
@@ -44,8 +46,8 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
 
   @transient var scanner: RegionScanner = _
 
-  private def createIterator(context: TaskContext): Iterator[Row] = {
-    val otherFilter: (Row) => Boolean = {
+  private def createIterator(context: TaskContext): Iterator[InternalRow] = {
+    val otherFilter: (InternalRow) => Boolean = {
       if (otherFilters.isDefined) {
         if (codegenEnabled) {
           GeneratePredicate.generate(otherFilters.get, finalOutput)
@@ -61,7 +63,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
     val results: java.util.ArrayList[Cell] = new java.util.ArrayList[Cell]()
     val row = new GenericMutableRow(finalOutput.size)
 
-    val iterator = new Iterator[Row] {
+    val iterator = new Iterator[InternalRow] {
       override def hasNext: Boolean = {
         if (!finished) {
           if (!gotNext) {
@@ -77,7 +79,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
         !finished
       }
 
-      override def next(): Row = {
+      override def next(): InternalRow = {
         if (hasNext) {
           gotNext = false
           relation.buildRowInCoprocessor(projections, results, row)
@@ -153,7 +155,7 @@ class SparkSqlRegionObserver extends BaseRegionObserver with Logging {
       val (stageId, partitionId, taskAttemptId, attemptNumber) =
         HBaseSerializer.deserialize(taskParaInfo).asInstanceOf[(Int, Int, Long, Int)]
       val taskContext = new TaskContextImpl(
-        stageId, partitionId, taskAttemptId, attemptNumber, null, false, new TaskMetrics)
+        stageId, partitionId, taskAttemptId, attemptNumber, null, new Properties, null)
 
       val regionInfo = s.getRegionInfo
       val startKey = if (regionInfo.getStartKey.isEmpty) None else Some(regionInfo.getStartKey)

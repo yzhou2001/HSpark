@@ -21,13 +21,13 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
-import org.apache.spark.sql.catalyst.plans.logical
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.{Project, SparkPlan}
+import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.{SparkPlanner, SparkPlan}
 import org.apache.spark.sql.hbase.{HBasePartition, HBaseRawType, HBaseRelation, KeyColumn}
-import org.apache.spark.sql.sources.LogicalRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{SQLContext, Strategy, execution}
+import org.apache.spark.sql.Row
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
@@ -39,7 +39,7 @@ private[hbase] trait HBaseStrategies {
   private[hbase] object HBaseDataSource extends Strategy {
 
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-      case logical.Aggregate(groupingExpressions, aggregateExpressions, child)
+      case Aggregate(groupingExpressions, aggregateExpressions, child)
         if groupingExpressions.nonEmpty &&
           canBeAggregatedForAll(groupingExpressions, aggregateExpressions, child) =>
           val withCodeGen = canBeCodeGened(allAggregates(aggregateExpressions)) && codegenEnabled

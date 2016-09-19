@@ -28,6 +28,7 @@ import org.apache.spark.sql.hbase.execution.HBaseSQLTableScan
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
 import org.apache.spark.sql.types.{AtomicType, DataType}
 import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.catalyst.InternalRow
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -41,7 +42,7 @@ object CoprocessorConstants {
 /**
  *
  * @param relation the HBase relation
- * @param codegenEnabled whether codegen is in effect
+ * @param wholeStageEnabled whether whole stage code gen is in effect
  * @param useCustomFilter whether custom filter is in effect
  * @param output projection. For post coprocessor processing,
  *               is the projection of the original scan
@@ -57,7 +58,7 @@ object CoprocessorConstants {
  * @param sqlContext SQL context
  */
 class HBaseSQLReaderRDD(val relation: HBaseRelation,
-                        val codegenEnabled: Boolean,
+                        val wholeStageEnabled: Boolean,
                         val useCustomFilter: Boolean,
                         val output: Seq[Attribute],
                         subplan: Option[SparkPlan],
@@ -67,7 +68,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         @transient sqlContext: SQLContext)
   extends RDD[Row](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
-  val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => Row = if (hasSubPlan) {
+  val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
   } else {
     relation.buildRow
@@ -97,7 +98,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 
   // Since the dependencies of RDD is a lazy val,
   // we need to initialize all its dependencies before sending it to HBase coprocessor
-  def initDependencies(rdd: RDD[Row]): Unit = {
+  def initDependencies(rdd: RDD[InternalRow]): Unit = {
     if (rdd.dependencies.nonEmpty) initDependencies(rdd.firstParent[Row])
   }
 
@@ -161,7 +162,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 
     val otherFilter: (Row) => Boolean =
       if (!hasSubPlan && otherFilters.isDefined) {
-        if (codegenEnabled) {
+        if (wholeStageEnabled) {
           GeneratePredicate.generate(otherFilters.get, finalOutput)
         } else {
           InterpretedPredicate.create(otherFilters.get, finalOutput)

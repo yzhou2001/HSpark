@@ -59,7 +59,7 @@ object PartialPredicateOperations {
      *                  for nullness checking purpose or not
      * @return
      */
-    def partialReduce(input: Row, schema: Seq[Attribute], checkNull: Boolean = false):
+    def partialReduce(input: MutableRow, schema: Seq[Attribute], checkNull: Boolean = false):
       (Any, Expression) = {
       e match {
         case And(left, right) =>
@@ -311,7 +311,6 @@ object PartialPredicateOperations {
 
     @inline
     protected def prc2(
-                        i: Row,
                         dataType1: DataType,
                         dataType2: DataType,
                         eval1: Any,

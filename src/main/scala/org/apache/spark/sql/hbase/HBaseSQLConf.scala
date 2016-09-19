@@ -31,10 +31,6 @@ object HBaseSQLConf {
  *
  */
 private[hbase] class HBaseSQLConf extends SQLConf {
-
-//  private[spark] override def dialect: String = getConf(SQLConf.DIALECT,
-//    classOf[HBaseSQLDialect].getCanonicalName)
-
   import HBaseSQLConf._
 
   /** The expiration of cached partition (i.e., region) info; defaults to 10 minutes . */

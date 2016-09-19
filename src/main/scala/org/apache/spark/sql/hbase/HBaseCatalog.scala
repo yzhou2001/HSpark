@@ -17,7 +17,7 @@
 package org.apache.spark.sql.hbase
 
 import java.io._
-import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip._
 
 import org.apache.hadoop.conf.Configuration
@@ -36,6 +36,8 @@ import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection._
+import scala.collection.convert.decorateAsScala._
 
 /**
  * Column represent the sql column
@@ -78,7 +80,7 @@ private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
   @transient
   lazy val connection = ConnectionFactory.createConnection(configuration)
 
-  lazy val relationMapCache = new ConcurrentMap[String, HBaseRelation]
+  lazy val relationMapCache = new ConcurrentHashMap[String, HBaseRelation].asScala
 
   private[sql] def admin: Admin = {
     if (admin_.isEmpty) {

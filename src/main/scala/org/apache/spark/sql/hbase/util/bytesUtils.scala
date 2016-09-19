@@ -116,7 +116,7 @@ object BinaryBytesUtils extends BytesUtils{
   }
 
   def toUTF8String(input: HBaseRawType, offset: Int, length: Int): UTF8String = {
-    UTF8String(input.slice(offset, offset + length))
+    UTF8String.fromBytes(input, offset, length)
   }
 
   def toByte(input: HBaseRawType, offset: Int, length: Int = 0): Byte = {
@@ -242,7 +242,7 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
       case item: Int => toBytes(item)
       case item: Long => toBytes(item)
       case item: Short => toBytes(item)
-      case item: String => toBytes(UTF8String(item))
+      case item: String => UTF8String.fromString(item).getBytes
       case item: UTF8String => toBytes(item)
     }
   }
@@ -268,7 +268,7 @@ object StringBytesUtils extends BytesUtils{
   }
 
   def toUTF8String(input: HBaseRawType, offset: Int, length: Int): UTF8String = {
-    UTF8String(input.slice(offset, offset + length))
+    UTF8String.fromBytes(input, offset, length)
   }
 
   def toByte(input: HBaseRawType, offset: Int, length: Int): Byte = {
@@ -352,7 +352,7 @@ class StringBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
       case item: Int => toBytes(item)
       case item: Long => toBytes(item)
       case item: Short => toBytes(item)
-      case item: String => toBytes(UTF8String(item))
+      case item: String => UTF8String.fromString(item).getBytes
       case item: UTF8String => toBytes(item)
     }
   }

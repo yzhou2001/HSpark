@@ -732,7 +732,7 @@ private[hbase] case class HBaseRelation(
     val filterPredicate = filters.headOption
     new HBaseSQLReaderRDD(
       this,
-      context.conf.codegenEnabled,
+      context.conf.wholeStageEnabled,
       context.conf.asInstanceOf[HBaseSQLConf].useCustomFilter,
       requiredColumns,
       subplan = None,
@@ -921,7 +921,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRowAfterCoprocessor(projections: Seq[(Attribute, Int)],
                                result: Result,
-                               row: MutableRow): Row = {
+                               row: MutableRow): MutableRow = {
     for (i <- projections.indices) {
       setColumn(result.rawCells()(i), projections(i), row)
     }
@@ -930,7 +930,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRowInCoprocessor(projections: Seq[(Attribute, Int)],
                             result: java.util.ArrayList[Cell],
-                            row: MutableRow): Row = {
+                            row: MutableRow): MutableRow = {
     def getColumnLatestCell(family: Array[Byte],
                             qualifier: Array[Byte]): Cell = {
       // 0 means equal, >0 means larger, <0 means smaller
@@ -985,7 +985,7 @@ private[hbase] case class HBaseRelation(
 
   def buildRow(projections: Seq[(Attribute, Int)],
                result: Result,
-               row: MutableRow): Row = {
+               row: MutableRow): MutableRow = {
     lazy val rowKeys = HBaseKVHelper.decodingRawKeyColumns(result.getRow, keyColumns)
     projections.foreach {
       p =>

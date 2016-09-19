@@ -17,9 +17,10 @@
 
 package org.apache.spark.sql.hbase.util
 
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Row}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.Row
 
 object HBaseKVHelper {
   val delimiter: Byte = 0

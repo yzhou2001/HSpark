@@ -25,30 +25,31 @@ import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat2, LoadIncrementalHFiles}
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapred._
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
-import org.apache.hadoop.mapreduce.{Job, RecordWriter}
+import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskType}
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Row}
-import org.apache.spark.sql.catalyst.plans.logical.Subquery
-import org.apache.spark.sql.execution.RunnableCommand
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.hbase.util.{DataTypeUtils, Util}
-import org.apache.spark.sql.sources.LogicalRelation
 import org.apache.spark.sql.types._
-import org.apache.spark.{Logging, SerializableWritable, SparkEnv, TaskContext}
+import org.apache.spark.{SerializableWritable, SparkEnv, SparkHadoopWriter, TaskContext}
+import org.apache.hadoop.mapred.TaskID
 
 import scala.collection.mutable.ArrayBuffer
 
 @DeveloperApi
 case class AlterDropColCommand(tableName: String, columnName: String) extends RunnableCommand {
 
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    sqlContext.catalog.asInstanceOf[HBaseCatalog].alterTableDropNonKey(tableName, columnName)
-    sqlContext.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    sparkSession.catalog.asInstanceOf[HBaseCatalog].alterTableDropNonKey(tableName, columnName)
+    sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
     Seq.empty[Row]
   }
 
@@ -63,8 +64,8 @@ case class AlterAddColCommand(
                                colFamily: String,
                                colQualifier: String) extends RunnableCommand {
 
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    val hbaseCatalog = sqlContext.catalog.asInstanceOf[HBaseCatalog]
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val hbaseCatalog = sparkSession.catalog.asInstanceOf[HBaseCatalog]
     hbaseCatalog.alterTableAddNonKey(tableName,
       NonKeyColumn(
         colName, hbaseCatalog.getDataType(colType), colFamily, colQualifier)
@@ -79,8 +80,8 @@ case class AlterAddColCommand(
 @DeveloperApi
 case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
 
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    val hbaseCatalog = sqlContext.catalog.asInstanceOf[HBaseCatalog]
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val hbaseCatalog = sparkSession.catalog.asInstanceOf[HBaseCatalog]
     hbaseCatalog.deleteTable(tableName)
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
@@ -92,12 +93,12 @@ case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
 @DeveloperApi
 case object ShowTablesCommand extends RunnableCommand {
 
-  def run(sqlContext: SQLContext): Seq[Row] = {
+  def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val tables = sqlContext.catalog.asInstanceOf[HBaseCatalog].getAllTableName
+    val tables = sparkSession.catalog.asInstanceOf[HBaseCatalog].getAllTableName
     tables.foreach(x => buffer.append(Row(x)))
-    sqlContext.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
-    buffer.toSeq
+    sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
+    buffer
   }
 
   override def output: Seq[Attribute] = StructType(Seq(StructField("", StringType))).toAttributes
@@ -106,9 +107,9 @@ case object ShowTablesCommand extends RunnableCommand {
 @DeveloperApi
 case class DescribeTableCommand(tableName: String) extends RunnableCommand {
 
-  def run(sqlContext: SQLContext): Seq[Row] = {
+  def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val relation = sqlContext.catalog.asInstanceOf[HBaseCatalog].getTable(tableName)
+    val relation = sparkSession.catalog.asInstanceOf[HBaseCatalog].getTable(tableName)
     if (relation.isDefined) {
       relation.get.allColumns.foreach {
         case keyColumn: KeyColumn =>
@@ -118,8 +119,8 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
           buffer.append(Row(nonKeyColumn.sqlName, nonKeyColumn.dataType.toString,
             "NON KEY COLUMN", nonKeyColumn.family, nonKeyColumn.qualifier))
       }
-      sqlContext.catalog.asInstanceOf[HBaseCatalog].stopAdmin
-      buffer.toSeq
+      sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin
+      buffer
     } else {
       sys.error(s"can not find table $tableName")
     }
@@ -132,17 +133,17 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
 @DeveloperApi
 case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
   extends RunnableCommand {
-  override def run(sqlContext: SQLContext) = {
-    val solvedRelation = sqlContext.catalog.lookupRelation(Seq(tableName))
-    val relation: HBaseRelation = solvedRelation.asInstanceOf[Subquery]
+  override def run(sparkSession: SparkSession) = {
+    val solvedRelation = sparkSession.sessionState.catalog.lookupRelation(Seq(tableName))
+    val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
 
     val bytes = valueSeq.zipWithIndex.map(v =>
       DataTypeUtils.string2TypeData(v._1, relation.schema(v._2).dataType))
     
-    val rows = sqlContext.sparkContext.makeRDD(Seq(Row.fromSeq(bytes)))
-    val inputValuesDF = sqlContext.createDataFrame(rows, relation.schema)
+    val rows = sparkSession.sparkContext.makeRDD(Seq(Row.fromSeq(bytes)))
+    val inputValuesDF = sparkSession.createDataFrame(rows, relation.schema)
     relation.insert(inputValuesDF, overwrite = false)
     
     Seq.empty[Row]
@@ -159,15 +160,14 @@ case class BulkLoadIntoTableCommand(
                                      delimiter: Option[String],
                                      parallel: Boolean)
   extends RunnableCommand
-  with SparkHadoopMapReduceUtil
   with Logging {
 
-  override def run(sqlContext: SQLContext) = {
-    @transient val solvedRelation = sqlContext.catalog.lookupRelation(Seq(tableName))
-    @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[Subquery]
+  override def run(sparkSession: SparkSession) = {
+    @transient val solvedRelation = sparkSession.sessionState.catalog.lookupRelation(Seq(tableName))
+    @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
-    @transient val hbContext = sqlContext.asInstanceOf[HBaseSQLContext]
+    @transient val hbContext = sparkSession.asInstanceOf[HBaseSQLContext]
 
     // tmp path for storing HFile
     @transient val tmpPath = Util.getTempFilePath(
@@ -182,9 +182,9 @@ case class BulkLoadIntoTableCommand(
     @transient val hadoopReader = if (isLocal) {
       val fs = FileSystem.getLocal(conf)
       val pathString = fs.pathToFile(new Path(inputPath)).toURI.toURL.toString
-      new HadoopReader(sqlContext.sparkContext, pathString, delimiter)(relation)
+      new HadoopReader(sparkSession.sparkContext, pathString, delimiter)(relation)
     } else {
-      new HadoopReader(sqlContext.sparkContext, inputPath, delimiter)(relation)
+      new HadoopReader(sparkSession.sparkContext, inputPath, delimiter)(relation)
     }
 
     @transient val splitKeys = relation.getRegionStartKeys.toArray
@@ -211,9 +211,20 @@ case class BulkLoadIntoTableCommand(
       (context: TaskContext, iter: Iterator[(HBaseRawType, Array[HBaseRawType])]) => {
         val config = wrappedConf.value
         /* "reduce task" <split #> <attempt # = spark task #> */
-        val attemptId = newTaskAttemptID(jobtrackerID, stageId, isMap = false,
-          context.partitionId(), context.attemptNumber())
-        val hadoopContext = newTaskAttemptContext(config, attemptId)
+
+        val attemptId = (context.taskAttemptId % Int.MaxValue).toInt
+        val jID = new SerializableWritable[JobID](SparkHadoopWriter.createJobID(
+          new Date(), context.stageId))
+        val taID = new SerializableWritable[TaskAttemptID](new TaskAttemptID(
+          new TaskID(jID.value, TaskType.MAP, context.partitionId), attemptId))
+
+//        newTaskAttemptID(jobtrackerID, stageId, isMap = false,
+//          context.partitionId(), context.attemptNumber())
+
+        val hadoopContext = new TaskAttemptContextImpl(
+          job.getConfiguration.asInstanceOf[JobConf], taID.value)
+
+//        newTaskAttemptContext(config, attemptId)
         val format = new HFileOutputFormat2
         format match {
           case c: Configurable => c.setConf(config)
@@ -290,12 +301,13 @@ case class BulkLoadIntoTableCommand(
         1
       }: Int
 
-    @transient val jobAttemptId = newTaskAttemptID(jobtrackerID, stageId, isMap = true, 0, 0)
+    @transient val jobAttemptId =
+      newTaskAttemptID(jobtrackerID, stageId, isMap = true, 0, 0)
     @transient val jobTaskContext = newTaskAttemptContext(wrappedConf.value, jobAttemptId)
     @transient val jobCommitter = jobFormat.getOutputCommitter(jobTaskContext)
     jobCommitter.setupJob(jobTaskContext)
     logDebug(s"Starting doBulkLoad on table ${relation.htable.getName} ...")
-    sqlContext.sparkContext.runJob(shuffled, writeShard)
+    sparkSession.sparkContext.runJob(shuffled, writeShard)
     logDebug(s"finished BulkLoad : ${System.currentTimeMillis()}")
     jobCommitter.commitJob(jobTaskContext)
     if (!parallel) {
