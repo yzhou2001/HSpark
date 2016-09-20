@@ -44,7 +44,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
     // we could not use codegen, or else it will lead to crashing the HBase region server!!!
     // For details, please read the comment in CheckDirEndPointImpl.
     var oldScan: HBaseSQLTableScan = null
-    lazy val codegenEnabled = catalog.pwdIsAccessible && oldScan.codegenEnabled
+    lazy val codegenEnabled = catalog.pwdIsAccessible && oldScan.sqlContext.conf.wholeStageEnabled
     val newSubplan = subplan.transformUp {
       case subplanScan: HBaseSQLTableScan =>
         oldScan = subplanScan

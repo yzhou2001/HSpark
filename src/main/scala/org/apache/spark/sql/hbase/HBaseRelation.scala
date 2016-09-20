@@ -44,7 +44,7 @@ class HBaseSource extends RelationProvider {
   override def createRelation(
                                sqlContext: SQLContext,
                                parameters: Map[String, String]): BaseRelation = {
-    val catalog = sqlContext.catalog.asInstanceOf[HBaseCatalog]
+    val catalog = sqlContext.sparkSession.catalog.asInstanceOf[HBaseCatalog]
 
     val tableName = parameters("tableName")
     val rawNamespace = parameters("namespace")

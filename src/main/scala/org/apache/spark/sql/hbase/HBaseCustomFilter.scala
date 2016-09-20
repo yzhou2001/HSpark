@@ -19,7 +19,6 @@ package org.apache.spark.sql.hbase
 
 import java.io._
 
-import org.apache.hadoop.hbase.KeyValue.KeyOnlyKeyValue
 import org.apache.hadoop.hbase.exceptions.DeserializationException
 import org.apache.hadoop.hbase.filter.Filter.ReturnCode
 import org.apache.hadoop.hbase.filter.FilterBase
@@ -104,7 +103,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
   private var remainingPredicateBoundRef: Expression = null
 
   // the working row
-  private var workingRow: MutableRow = null
+  private var workingRow: GenericMutableRow = null
 
   /**
    * constructor method
