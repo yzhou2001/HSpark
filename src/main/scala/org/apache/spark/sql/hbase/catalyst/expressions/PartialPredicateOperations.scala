@@ -133,7 +133,7 @@ object PartialPredicateOperations {
               if (item._1 == null) {
                 newList = newList :+ item._2
               } else if (item._2 == null) {
-                val cmp = prc2(input, value.dataType, item._2.dataType, evaluatedValue, item._1)
+                val cmp = prc2(value.dataType, item._2.dataType, evaluatedValue, item._1)
                 if (cmp.isDefined && cmp.get == 0) {
                   foundInList = true
                 } else if (cmp.isEmpty || (cmp.isDefined && (cmp.get == 1 || cmp.get == -1))) {
@@ -157,7 +157,7 @@ object PartialPredicateOperations {
             var foundInSet = false
             var newHset = Set[Any]()
             for (item <- hset if !foundInSet) {
-              val cmp = prc2(input, value.dataType, value.dataType, evaluatedValue._1, item)
+              val cmp = prc2(value.dataType, value.dataType, evaluatedValue._1, item)
               if (cmp.isDefined && cmp.get == 0) {
                   foundInSet = true
               } else if (cmp.isEmpty || (cmp.isDefined && (cmp.get == 1 || cmp.get == -1))) {
@@ -213,7 +213,7 @@ object PartialPredicateOperations {
           } else if (evalR._1 == null) {
             (null, EqualTo(left, evalR._2))
           } else {
-            val cmp = prc2(input, left.dataType, right.dataType, evalL._1, evalR._1)
+            val cmp = prc2(left.dataType, right.dataType, evalL._1, evalR._1)
             if (cmp.isDefined && cmp.get != 1 && cmp.get != -1) {
               (cmp.get == 0, null)
             } else {
@@ -230,7 +230,7 @@ object PartialPredicateOperations {
           } else if (evalR._1 == null) {
             (null, LessThan(left, evalR._2))
           } else {
-            val cmp = prc2(input, left.dataType, right.dataType, evalL._1, evalR._1)
+            val cmp = prc2(left.dataType, right.dataType, evalL._1, evalR._1)
             if (cmp.isDefined && cmp.get != -1) {
               (cmp.get == -2, null)
             } else {
@@ -247,7 +247,7 @@ object PartialPredicateOperations {
           } else if (evalR._1 == null) {
             (null, LessThanOrEqual(left, evalR._2))
           } else {
-            val cmp = prc2(input, left.dataType, right.dataType, evalL._1, evalR._1)
+            val cmp = prc2(left.dataType, right.dataType, evalL._1, evalR._1)
             if (cmp.isDefined) {
               if (cmp.get == 1) {
                 (null, EqualTo(evalL._2, evalR._2))
@@ -268,7 +268,7 @@ object PartialPredicateOperations {
           } else if (evalR._1 == null) {
             (null, GreaterThan(left, evalR._2))
           } else {
-            val cmp = prc2(input, left.dataType, right.dataType, evalL._1, evalR._1)
+            val cmp = prc2(left.dataType, right.dataType, evalL._1, evalR._1)
             if (cmp.isDefined && cmp.get != 1) {
               (cmp.get == 2, null)
             } else {
@@ -285,7 +285,7 @@ object PartialPredicateOperations {
           } else if (evalR._1 == null) {
             (null, GreaterThanOrEqual(left, evalR._2))
           } else {
-            val cmp = prc2(input, left.dataType, right.dataType, evalL._1, evalR._1)
+            val cmp = prc2(left.dataType, right.dataType, evalL._1, evalR._1)
             if (cmp.isDefined) {
               if (cmp.get == -1) {
                 (null, EqualTo(evalL._2, evalR._2))

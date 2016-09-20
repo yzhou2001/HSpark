@@ -42,7 +42,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
                                    var finalOutput: Seq[Attribute],
                                    var otherFilters: Option[Expression],
                                    @transient sqlContext: SQLContext)
-  extends RDD[Row](sqlContext.sparkContext, Nil) with Logging {
+  extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
 
   @transient var scanner: RegionScanner = _
 
@@ -109,7 +109,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
     Array()
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[Row] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     scanner = split.asInstanceOf[HBasePartition].newScanner
     createIterator(context)
   }

@@ -73,7 +73,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   } else {
     relation.buildRow
   }
-  val newSubplanRDD: RDD[Row] = if (hasSubPlan) {
+  val newSubplanRDD: RDD[InternalRow] = if (hasSubPlan) {
     // Since HBase doesn't hold all information,
     // we need to execute the subplan in SparkSql first
     // and then send the executed subplanRDD to HBase
@@ -99,7 +99,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   // Since the dependencies of RDD is a lazy val,
   // we need to initialize all its dependencies before sending it to HBase coprocessor
   def initDependencies(rdd: RDD[InternalRow]): Unit = {
-    if (rdd.dependencies.nonEmpty) initDependencies(rdd.firstParent[Row])
+    if (rdd.dependencies.nonEmpty) initDependencies(rdd.firstParent[InternalRow])
   }
 
   override def getPartitions: Array[Partition] = {
@@ -144,7 +144,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 
   private def createIterator(context: TaskContext,
                              scanner: ResultScanner,
-                             otherFilters: Option[Expression]): Iterator[Row] = {
+                             otherFilters: Option[Expression]): Iterator[MutableRow] = {
     val finalOutput = if (hasSubPlan) {
       subplan.get.output
     } else if (otherFilters.isDefined) {
@@ -160,7 +160,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
     var gotNext: Boolean = false
     var result: Result = null
 
-    val otherFilter: (Row) => Boolean =
+    val otherFilter: (InternalRow) => Boolean =
       if (!hasSubPlan && otherFilters.isDefined) {
         if (wholeStageEnabled) {
           GeneratePredicate.generate(otherFilters.get, finalOutput)
@@ -169,7 +169,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         }
       } else null
 
-    val iterator = new Iterator[Row] {
+    val iterator = new Iterator[MutableRow] {
       override def hasNext: Boolean = {
         if (!finished) {
           if (!gotNext) {
@@ -184,7 +184,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         !finished
       }
 
-      override def next(): Row = {
+      override def next(): MutableRow = {
         if (hasNext) {
           gotNext = false
           rowBuilder(projections, result, row)
@@ -224,7 +224,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
     }
 
     if (!useCustomFilter) {
-      def addOtherFilter(rdd: RDD[Row]): Unit = rdd match {
+      def addOtherFilter(rdd: RDD[InternalRow]): Unit = rdd match {
         case hcsRDD: HBaseCoprocessorSQLReaderRDD => hcsRDD.otherFilters = otherFilters
         case _ => if (rdd.dependencies.nonEmpty) addOtherFilter(rdd.firstParent[Row])
       }
@@ -247,7 +247,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   // partial reduction for those partitions mapped to multiple critical point ranges,
   // as indicated by the keyPartialEvalIndex in the partition, where the original
   // filter predicate will be used
-  override def compute(split: Partition, context: TaskContext): Iterator[Row] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[MutableRow] = {
     val partition = split.asInstanceOf[HBasePartition]
     val predicate = partition.computePredicate(relation)
     val expandedCPRs: Seq[MDCriticalPointRange[_]] =
@@ -293,12 +293,12 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         })
         val resultsWithPred = relation.htable.get(gets).zip(predForEachRange).filter(!_._1.isEmpty)
 
-        def evalResultForBoundPredicate(input: Row, predicate: Expression): Boolean = {
+        def evalResultForBoundPredicate(input: MutableRow, predicate: Expression): Boolean = {
           val boundPredicate = BindReferences.bindReference(predicate, output)
           boundPredicate.eval(input).asInstanceOf[Boolean]
         }
         val projections = output.zipWithIndex
-        val resultRows: Seq[Row] = for {
+        val resultRows: Seq[MutableRow] = for {
           (result, predicate) <- resultsWithPred
           row = new GenericMutableRow(output.size)
           resultRow = relation.buildRow(projections, result, row)
@@ -375,7 +375,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 }
 
 private[hbase] class DummyRDD(@transient sqlContext: SQLContext)
-  extends RDD[Row](sqlContext.sparkContext, Nil) {
+  extends RDD[InternalRow](sqlContext.sparkContext, Nil) {
 
   @transient var result: Iterator[Row] = _
 
