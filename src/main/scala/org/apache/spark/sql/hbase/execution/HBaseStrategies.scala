@@ -19,7 +19,8 @@ package org.apache.spark.sql.hbase.execution
 
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.expressions._
+import import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
