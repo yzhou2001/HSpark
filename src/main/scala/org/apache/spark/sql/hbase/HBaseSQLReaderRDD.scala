@@ -66,7 +66,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         val deploySuccessfully: Option[Boolean],
                         @transient val filterPred: Option[Expression],
                         @transient sqlContext: SQLContext)
-  extends RDD[Row](sqlContext.sparkContext, Nil) with Logging {
+  extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
@@ -226,7 +226,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
     if (!useCustomFilter) {
       def addOtherFilter(rdd: RDD[InternalRow]): Unit = rdd match {
         case hcsRDD: HBaseCoprocessorSQLReaderRDD => hcsRDD.otherFilters = otherFilters
-        case _ => if (rdd.dependencies.nonEmpty) addOtherFilter(rdd.firstParent[Row])
+        case _ => if (rdd.dependencies.nonEmpty) addOtherFilter(rdd.firstParent[InternalRow])
       }
       addOtherFilter(newSubplanRDD)
     }
@@ -298,7 +298,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
           boundPredicate.eval(input).asInstanceOf[Boolean]
         }
         val projections = output.zipWithIndex
-        val resultRows: Seq[MutableRow] = for {
+        val resultRows: Seq[InternalRow] = for {
           (result, predicate) <- resultsWithPred
           row = new GenericMutableRow(output.size)
           resultRow = relation.buildRow(projections, result, row)
@@ -377,13 +377,13 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 private[hbase] class DummyRDD(@transient sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) {
 
-  @transient var result: Iterator[Row] = _
+  @transient var result: Iterator[InternalRow] = _
 
   override def getPartitions = ???
 
   override def getPreferredLocations(split: Partition) = ???
 
-  override def compute(split: Partition, taskContext: TaskContext): Iterator[Row] = {
+  override def compute(split: Partition, taskContext: TaskContext): Iterator[InternalRow] = {
     result
   }
 }
