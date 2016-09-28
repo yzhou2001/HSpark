@@ -24,7 +24,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
 import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner}
-import org.apache.spark.sql.hbase.execution.{AddCoprocessor, HBaseStrategies}
+import org.apache.spark.sql.hbase.execution.HBaseStrategies
 import org.apache.spark.sql.internal.SQLConf
 
 class HBaseSQLContext(sc: SparkContext) extends SQLContext(sc) {
@@ -47,7 +47,8 @@ class HBaseSQLContext(sc: SparkContext) extends SQLContext(sc) {
   @transient
   protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
     val batches = Batch("Add exchange", Once, EnsureRequirements(conf)) ::
-      Batch("Add coprocessor", Once, AddCoprocessor(self)) ::
+      // No AddCoprocessor now for lack of unsafe support in coprocessor
+      // maybe added later
       Nil
   }
 }

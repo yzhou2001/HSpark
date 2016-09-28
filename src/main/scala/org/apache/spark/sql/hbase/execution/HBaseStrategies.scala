@@ -62,7 +62,7 @@ private[hbase] trait HBaseStrategies {
             planLater(child)) :: Nil
 
       case PhysicalOperation(projectList, inPredicates,
-      l@LogicalRelation(relation: HBaseRelation)) =>
+      l@LogicalRelation(relation: HBaseRelation, None, None)) =>
         pruneFilterProjectHBase(
           l,
           projectList,
