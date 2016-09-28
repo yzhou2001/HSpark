@@ -23,6 +23,7 @@ import org.apache.spark.sql.hbase.types.RangeType._
 import org.apache.spark.sql.hbase.types._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.InternalRow
 
 object PartialPredicateOperations {
   // When the checkNullness argument of the partialReduce method is false, the partial
@@ -59,7 +60,7 @@ object PartialPredicateOperations {
      *                  for nullness checking purpose or not
      * @return
      */
-    def partialReduce(input: MutableRow, schema: Seq[Attribute], checkNull: Boolean = false):
+    def partialReduce(input: InternalRow, schema: Seq[Attribute], checkNull: Boolean = false):
       (Any, Expression) = {
       e match {
         case And(left, right) =>

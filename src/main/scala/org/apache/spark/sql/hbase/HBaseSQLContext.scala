@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase.execution.{AddCoprocessor, HBaseStrategies}
 import org.apache.spark.sql.internal.SQLConf
 
-class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
+class HBaseSQLContext(sc: SparkContext) extends SQLContext(sc) {
   self =>
 
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
@@ -38,15 +38,15 @@ class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
 
   @transient
-  override protected[sql] lazy val catalog: HBaseCatalog =
+  protected[sql] lazy val catalog: HBaseCatalog =
     new HBaseCatalog(this, sc.hadoopConfiguration)
 
-  experimental.extraStrategies = Seq((new SparkPlanner(conf, sc, Nil)
+  experimental.extraStrategies = Seq((new SparkPlanner(sc, conf, Nil)
     with HBaseStrategies).HBaseDataSource)
 
   @transient
-  override protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
-    val batches = Batch("Add exchange", Once, EnsureRequirements(self)) ::
+  protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
+    val batches = Batch("Add exchange", Once, EnsureRequirements(conf)) ::
       Batch("Add coprocessor", Once, AddCoprocessor(self)) ::
       Nil
   }

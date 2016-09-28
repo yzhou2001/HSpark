@@ -24,18 +24,19 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.{SparkPlanner, SparkPlan}
+import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase.{HBasePartition, HBaseRawType, HBaseRelation, KeyColumn}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{SQLContext, Strategy, execution}
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.InternalRow
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
  * applied.
  */
 private[hbase] trait HBaseStrategies {
-  self: SQLContext#SparkPlanner =>
+  self: SparkPlanner =>
 
   private[hbase] object HBaseDataSource extends Strategy {
 
@@ -43,7 +44,7 @@ private[hbase] trait HBaseStrategies {
       case Aggregate(groupingExpressions, aggregateExpressions, child)
         if groupingExpressions.nonEmpty &&
           canBeAggregatedForAll(groupingExpressions, aggregateExpressions, child) =>
-          val withCodeGen = canBeCodeGened(allAggregates(aggregateExpressions)) && codegenEnabled
+          val withCodeGen = canBeCodeGened(allAggregates(aggregateExpressions))
           if (withCodeGen) execution.GeneratedAggregate(
             // In this case, 'partial = true' doesn't mean it is partial, actually, it is not.
             // We made it to true to avoid adding Exchange operation.
@@ -179,7 +180,7 @@ private[hbase] trait HBaseStrategies {
                                           projectList: Seq[NamedExpression],
                                           filterPredicates: Seq[Expression],
                                           scanBuilder:
-                                          (Seq[Attribute], Seq[Expression]) => RDD[Row]) = {
+                                          (Seq[Attribute], Seq[Expression]) => RDD[InternalRow]) = {
 
       val projectSet = AttributeSet(projectList.flatMap(_.references))
       val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
@@ -220,7 +221,7 @@ private[hbase] trait HBaseStrategies {
         val requestedColumns = projectSet.map(relation.attributeMap).toSeq
         val scan = HBaseSQLTableScan(hbaseRelation, requestedColumns,
           scanBuilder(requestedColumns, pushedFilters))
-        Project(projectList, scan)
+        ProjectExec(projectList, scan)
       }
     }
   }

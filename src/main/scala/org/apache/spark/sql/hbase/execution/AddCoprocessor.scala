@@ -19,6 +19,7 @@ package org.apache.spark.sql.hbase.execution
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.planning.PhysicalAggregation
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.hbase._
@@ -37,7 +38,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
     val (output, distinctOutput) = (origPlan.output, origPlan.output.distinct)
     val needToReduce: Boolean = distinctOutput.size < output.size
     val subplan: SparkPlan = {
-      if (needToReduce) Project(distinctOutput, origPlan) else origPlan
+      if (needToReduce) ProjectExec(distinctOutput, origPlan) else origPlan
     }
 
     // If any current directory of region server is not accessible,
@@ -68,7 +69,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
     val newScan = new HBaseSQLTableScan(oldRDD.relation, subplan.output, newRDD)
 
     // add project spark plan if projection list has duplicate
-    if (needToReduce) Project(output, newScan) else newScan
+    if (needToReduce) ProjectExec(output, newScan) else newScan
   }
 
   def apply(plan: SparkPlan): SparkPlan = {
@@ -80,14 +81,14 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
     plan match {
       // If the plan is tableScan directly, we don't need to use coprocessor
       case HBaseSQLTableScan(_, _, _) => plan
-      case Filter(_, child: HBaseSQLTableScan) => plan
+      case FilterExec(_, child: HBaseSQLTableScan) => plan
       case _ =>
         val result = plan.transformUp {
           case scan: HBaseSQLTableScan if coprocessorIsAvailable(scan.relation) =>
             needToCreateSubplanSeq :+= true
             scan
 
-          case scan: LeafNode =>
+          case scan: LeafExecNode =>
             needToCreateSubplanSeq :+= false
             scan
 
@@ -109,7 +110,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
             needToCreateSubplanSeq = needToCreateSubplanSeq.init :+ false
             val newPlan = generateNewSubplan(exchange.child)
             exchange.withNewChildren(Seq(newPlan))
-          case limit: Limit if needToCreateSubplan =>
+          case limit: BaseLimitExec if needToCreateSubplan =>
             needToCreateSubplanSeq = needToCreateSubplanSeq.init :+ false
             val newPlan = generateNewSubplan(limit.child)
             limit.withNewChildren(Seq(newPlan))
@@ -120,7 +121,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
           //  and it will lead to ParallelCollectionRDD after executing.
           // For the computing in ParallelCollectionRDD, it needs ParallelCollectionPartition,
           // which we don't know how to transform from ourHBasePartition.
-          case takeOrdered: TakeOrdered if needToCreateSubplan =>
+          case takeOrdered: TakeOrderedAndProjectExec if needToCreateSubplan =>
             needToCreateSubplanSeq = needToCreateSubplanSeq.init :+ false
             takeOrdered
 
@@ -129,7 +130,7 @@ private[hbase] case class AddCoprocessor(sqlContext: SQLContext) extends Rule[Sp
           //
           // Thus, for the project contains those expressions,
           // we will process them without coprocessor.
-          case proj: Project if needToCreateSubplan =>
+          case proj: ProjectExec if needToCreateSubplan =>
             val foundExprShouldBeSkipped = proj.expressions.exists(exp => {
               var found = false
               exp transform {

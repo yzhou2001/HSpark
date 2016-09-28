@@ -34,6 +34,7 @@ import org.apache.spark.sql.hbase.util._
 import org.apache.spark.sql.sources.{BaseRelation, CatalystScan, InsertableRelation, RelationProvider}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.InternalRow
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -727,7 +728,7 @@ private[hbase] case class HBaseRelation(
   }
 
 
-  def buildScan(requiredColumns: Seq[Attribute], filters: Seq[Expression]): RDD[Row] = {
+  def buildScan(requiredColumns: Seq[Attribute], filters: Seq[Expression]): RDD[InternalRow] = {
     require(filters.size < 2, "Internal logical error: unexpected filter list size")
     val filterPredicate = filters.headOption
     new HBaseSQLReaderRDD(
@@ -821,7 +822,7 @@ private[hbase] case class HBaseRelation(
         // of c2 so we can restrict the interested qualifiers to "c2" only.
         distinctProjectionList = predicateNameSet.toSeq.distinct
         val boundPred = BindReferences.bindReference(pred, predRefs)
-        val row = new GenericRow(predRefs.size) // an all-null row
+        val row = new GenericInternalRow(predRefs.size) // an all-null row
         val prRes = boundPred.partialReduce(row, predRefs, checkNull = true)
         val (addColumn, nkcols) = prRes match {
           //  At least one existing column has to be fetched to qualify the record,

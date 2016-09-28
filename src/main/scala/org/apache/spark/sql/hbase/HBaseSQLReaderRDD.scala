@@ -247,7 +247,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   // partial reduction for those partitions mapped to multiple critical point ranges,
   // as indicated by the keyPartialEvalIndex in the partition, where the original
   // filter predicate will be used
-  override def compute(split: Partition, context: TaskContext): Iterator[MutableRow] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val partition = split.asInstanceOf[HBasePartition]
     val predicate = partition.computePredicate(relation)
     val expandedCPRs: Seq[MDCriticalPointRange[_]] =

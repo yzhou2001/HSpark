@@ -73,8 +73,8 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
   }
 }
 
-private[hbase] class HBaseCatalog(@transient hbaseContext: SQLContext,
-                                  @transient configuration: Configuration)
+private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
+                                  configuration: Configuration)
   extends Catalog with Logging with Serializable {
 
   @transient

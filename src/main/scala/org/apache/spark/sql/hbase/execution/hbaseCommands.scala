@@ -25,9 +25,9 @@ import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat2, LoadIncrementalHFiles}
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.mapred._
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
-import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskType}
+import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql._
@@ -39,8 +39,10 @@ import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.hbase.util.{DataTypeUtils, Util}
 import org.apache.spark.sql.types._
-import org.apache.spark.{SerializableWritable, SparkEnv, SparkHadoopWriter, TaskContext}
-import org.apache.hadoop.mapred.TaskID
+import org.apache.spark.{SparkEnv, SparkHadoopWriter, TaskContext}
+import org.apache.hadoop.mapred.{JobConf, TaskID}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.util.SerializableConfiguration
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -134,7 +136,8 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
 case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
   extends RunnableCommand {
   override def run(sparkSession: SparkSession) = {
-    val solvedRelation = sparkSession.sessionState.catalog.lookupRelation(Seq(tableName))
+    val solvedRelation = sparkSession.sessionState.catalog.
+      lookupRelation(TableIdentifier(tableName))
     val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
@@ -163,7 +166,8 @@ case class BulkLoadIntoTableCommand(
   with Logging {
 
   override def run(sparkSession: SparkSession) = {
-    @transient val solvedRelation = sparkSession.sessionState.catalog.lookupRelation(Seq(tableName))
+    @transient val solvedRelation = sparkSession.sessionState.catalog.
+      lookupRelation(TableIdentifier(tableName))
     @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
@@ -172,7 +176,7 @@ case class BulkLoadIntoTableCommand(
     // tmp path for storing HFile
     @transient val tmpPath = Util.getTempFilePath(
       hbContext.sparkContext.hadoopConfiguration, relation.tableName)
-    @transient val job = new Job(new JobConf(hbContext.sparkContext.hadoopConfiguration))
+    @transient val job = Job.getInstance(hbContext.sparkContext.hadoopConfiguration)
     HFileOutputFormat2.configureIncrementalLoad(job, relation.htable,
       relation.connection_.getRegionLocator(relation.hTableName))
     job.getConfiguration.set("mapreduce.output.fileoutputformat.outputdir", tmpPath)
@@ -188,7 +192,7 @@ case class BulkLoadIntoTableCommand(
     }
 
     @transient val splitKeys = relation.getRegionStartKeys.toArray
-    @transient val wrappedConf = new SerializableWritable(conf)
+    @transient val wrappedConf = new SerializableConfiguration(job.getConfiguration)
 
     @transient val rdd = hadoopReader.makeBulkLoadRDDFromTextFile
     @transient val partitioner = new HBasePartitioner(splitKeys)
@@ -213,18 +217,13 @@ case class BulkLoadIntoTableCommand(
         /* "reduce task" <split #> <attempt # = spark task #> */
 
         val attemptId = (context.taskAttemptId % Int.MaxValue).toInt
-        val jID = new SerializableWritable[JobID](SparkHadoopWriter.createJobID(
-          new Date(), context.stageId))
-        val taID = new SerializableWritable[TaskAttemptID](new TaskAttemptID(
-          new TaskID(jID.value, TaskType.MAP, context.partitionId), attemptId))
-
-//        newTaskAttemptID(jobtrackerID, stageId, isMap = false,
-//          context.partitionId(), context.attemptNumber())
+        val jID = SparkHadoopWriter.createJobID(new Date(), context.stageId)
+        val taID = new TaskAttemptID(
+          new TaskID(jID, TaskType.MAP, context.partitionId), attemptId)
 
         val hadoopContext = new TaskAttemptContextImpl(
-          job.getConfiguration.asInstanceOf[JobConf], taID.value)
+          job.getConfiguration.asInstanceOf[JobConf], taID)
 
-//        newTaskAttemptContext(config, attemptId)
         val format = new HFileOutputFormat2
         format match {
           case c: Configurable => c.setConf(config)
@@ -302,8 +301,8 @@ case class BulkLoadIntoTableCommand(
       }: Int
 
     @transient val jobAttemptId =
-      newTaskAttemptID(jobtrackerID, stageId, isMap = true, 0, 0)
-    @transient val jobTaskContext = newTaskAttemptContext(wrappedConf.value, jobAttemptId)
+      new TaskAttemptID(jobtrackerID, stageId, true, 0, 0)
+    @transient val jobTaskContext = new TaskAttemptContextImpl(wrappedConf.value, jobAttemptId)
     @transient val jobCommitter = jobFormat.getOutputCommitter(jobTaskContext)
     jobCommitter.setupJob(jobTaskContext)
     logDebug(s"Starting doBulkLoad on table ${relation.htable.getName} ...")
