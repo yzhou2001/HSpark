@@ -40,14 +40,6 @@ object HBaseSQLCliDriver extends Logging {
 
   def getCompletors: Seq[Completor] = {
     val sc: SimpleCompletor = new SimpleCompletor(new Array[String](0))
-
-    // add keywords, including lower-cased versions
-    HBaseSQLParser.getKeywords.foreach { kw =>
-      sc.addCandidateString(kw)
-      sc.addCandidateString(kw.toLowerCase)
-    }
-
-
     Seq(sc)
   }
 
