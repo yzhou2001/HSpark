@@ -60,7 +60,7 @@
     <commons.httpclient.version>4.2.6</commons.httpclient.version>
     <commons.math3.version>3.1.1</commons.math3.version>
     <test_classpath_file>${project.build.directory}/spark-test-classpath.txt</test_classpath_file>
-    <scala.version>2.11.7</scala.version>
+    <scala.version>2.11.8</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
     <jline.version>${scala.version}</jline.version>
     <jline.groupid>org.scala-lang</jline.groupid>
