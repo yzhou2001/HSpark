@@ -40,32 +40,18 @@
     <hadoop.version>2.4.0</hadoop.version>
     <hbase.version>1.1.2</hbase.version>
 
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <akka.version>2.3.11</akka.version>
     <java.version>1.8</java.version>
-    <mesos.version>0.21.0</mesos.version>
-    <mesos.classifier>shaded-protobuf</mesos.classifier>
     <protobuf.version>2.5.0</protobuf.version>
-    <yarn.version>${hadoop.version}</yarn.version>
-    <zookeeper.version>3.4.5</zookeeper.version>
-    <parquet.version>1.6.0rc3</parquet.version>
-    <jblas.version>1.2.3</jblas.version>
-    <jetty.version>8.1.14.v20131031</jetty.version>
-    <codahale.metrics.version>3.0.0</codahale.metrics.version>
+
     <avro.version>1.7.6</avro.version>
     <jets3t.version>0.7.1</jets3t.version>
-    <aws.java.sdk.version>1.8.3</aws.java.sdk.version>
-    <aws.kinesis.client.version>1.1.0</aws.kinesis.client.version>
-    <commons.httpclient.version>4.2.6</commons.httpclient.version>
+
     <commons.math3.version>3.1.1</commons.math3.version>
     <test_classpath_file>${project.build.directory}/spark-test-classpath.txt</test_classpath_file>
+
     <scala.version>2.11.8</scala.version>
     <scala.binary.version>2.11</scala.binary.version>
-    <jline.version>${scala.version}</jline.version>
-    <jline.groupid>org.scala-lang</jline.groupid>
     <codehaus.jackson.version>1.8.8</codehaus.jackson.version>
-    <snappy.version>1.1.1.6</snappy.version>
 
     <!--
       Dependency scopes that can be overridden by enabling certain profiles. These profiles are
@@ -91,8 +77,7 @@
     <CodeCacheSize>512m</CodeCacheSize>
 
   </properties>
-
-
+  
   <repositories>
     <repository>
       <id>central</id>
