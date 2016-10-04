@@ -28,7 +28,7 @@ import org.apache.hadoop.hbase.ipc.BlockingRpcCallback
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase._
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.catalog.Catalog
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.{CatalystConf, SimpleCatalystConf}
@@ -73,7 +73,7 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
   }
 }
 
-private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
+private[hbase] class HBaseCatalog(sparkSession: SparkSession,
                                   configuration: Configuration)
   extends Catalog with Logging with Serializable {
 
@@ -136,7 +136,7 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
 
   def deploySuccessfully: Option[Boolean] = {
     if (deploySuccessfully_internal == null) {
-      if (hbaseContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor) {
+      if (sparkSession.conf.asInstanceOf[HBaseSQLConf].useCoprocessor) {
         val metadataTable = getMetadataTable
         // When building the connection to the hbase table, we need to check
         // whether the current directory in the regionserver is accessible or not.
@@ -198,7 +198,7 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
       val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
       if (!checkHBaseTableExists(hTableName)) {
         createHBaseUserTable(hTableName, families, splitKeys,
-          hbaseContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
+          sparkSession.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
       } else {
         families.foreach {
           family =>
@@ -215,7 +215,7 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
         val hbaseRelation = HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
           allColumns, deploySuccessfully,
           hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
-          encodingFormat, connection)(hbaseContext)
+          encodingFormat, connection)(sparkSession.sqlContext)
         hbaseRelation.setConfig(configuration)
 
         writeObjectToTable(hbaseRelation, metadataTable)
@@ -239,7 +239,7 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
       val hbaseRelation = HBaseRelation(relation.tableName,
         relation.hbaseNamespace, relation.hbaseTableName,
         allColumns, deploySuccessfully, relation.hasCoprocessor,
-        connection = connection)(hbaseContext)
+        connection = connection)(sparkSession.sqlContext)
       hbaseRelation.setConfig(configuration)
 
       writeObjectToTable(hbaseRelation, metadataTable)
@@ -255,9 +255,9 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
     if (result.isDefined) {
       val relation = result.get
       val allColumns = relation.allColumns :+ column
-      val hbaseRelation = HBaseRelation(relation.tableName,
-        relation.hbaseNamespace, relation.hbaseTableName,
-        allColumns, deploySuccessfully, relation.hasCoprocessor, connection = connection)(hbaseContext)
+      val hbaseRelation = HBaseRelation(relation.tableName, relation.hbaseNamespace,
+        relation.hbaseTableName, allColumns, deploySuccessfully, relation.hasCoprocessor,
+        connection = connection) (sparkSession.sqlContext)
       hbaseRelation.setConfig(configuration)
 
       writeObjectToTable(hbaseRelation, metadataTable)
@@ -319,7 +319,7 @@ private[hbase] class HBaseCatalog(hbaseContext: SQLContext,
     val objectInputStream = new ObjectInputStream(inflaterInputStream)
     val hbaseRelation: HBaseRelation
     = objectInputStream.readObject().asInstanceOf[HBaseRelation]
-    hbaseRelation.context = hbaseContext
+    hbaseRelation.context = sparkSession.sqlContext
     hbaseRelation.setConfig(configuration)
     hbaseRelation
   }
