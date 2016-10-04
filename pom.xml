@@ -21,12 +21,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>hspark</artifactId>
-  <packaging>jar</packaging>
-  <groupId>HSpark</groupId>
-  <version>1.0.0</version>
-  <name>HSpark</name>
-  <url>https://github.com/yzhou2001/HSpark</url>
 
   <parent>
     <groupId>org.apache</groupId>
@@ -34,7 +28,47 @@
     <version>14</version>
   </parent>
 
+  <groupId>HSpark</groupId>
+  <artifactId>hspark</artifactId>
+  <packaging>jar</packaging>
+  <version>2.0.0</version>
+  <name>HSpark</name>
+  <url>https://github.com/yzhou2001/HSpark</url>
+
+  <licenses>
+    <license>
+      <name>Apache 2.0 License</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git@github.com:yzhou2001/HSpark.git</connection>
+    <developerConnection>scm:git:https://github.com/yzhou2001/HSpark.git</developerConnection>
+    <url>scm:git:git@github.com:yzhou2001/HSpark.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>yzhou2001</id>
+      <name>Yan Zhou</name>
+      <email>yzhou_1999@yahoo.com</email>
+    </developer>
+    <developer>
+      <id>bomeng</id>
+      <name>Bo Meng</name>
+      <email>mengbo@hotmail.com</email>
+    </developer>
+  </developers>
+
+  <prerequisites>
+    <maven>${maven.version}</maven>
+  </prerequisites>
+
   <properties>
+    <maven.version>3.3.9</maven.version>
     <sbt.project.name>hspark</sbt.project.name>
     <spark.version>2.0.0</spark.version>
     <hadoop.version>2.4.0</hadoop.version>
@@ -77,7 +111,7 @@
     <CodeCacheSize>512m</CodeCacheSize>
 
   </properties>
-  
+
   <repositories>
     <repository>
       <id>central</id>
