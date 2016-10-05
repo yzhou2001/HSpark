@@ -34,7 +34,8 @@ import org.apache.spark.sql.hbase.util._
 import org.apache.spark.sql.sources.{BaseRelation, CatalystScan, InsertableRelation, RelationProvider}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
+import org.apache.spark.sql.catalyst.catalog.{CatalogColumn, CatalogStorageFormat, CatalogTable, CatalogTableType}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -47,8 +48,11 @@ class HBaseSource extends RelationProvider {
                                parameters: Map[String, String]): BaseRelation = {
     val catalog = sqlContext.sparkSession.catalog.asInstanceOf[HBaseCatalog]
 
+    val catalogTable = CatalogTable(null, null, null, null, properties = parameters)
+    catalog.createTable("", catalogTable, ignoreIfExists = true)
+
     val tableName = parameters("tableName")
-    val rawNamespace = parameters("namespace")
+    val hbaseNamespace = parameters("namespace")
     val hbaseTableName = parameters("hbaseTableName")
     val encodingFormat = parameters("encodingFormat")
     val colsSeq = parameters("colsSeq").split(",")
@@ -76,7 +80,11 @@ class HBaseSource extends RelationProvider {
           )
         }
     }
-    catalog.createTable(tableName, rawNamespace, hbaseTableName, allColumns, null, encodingFormat)
+
+    HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
+      allColumns, catalog.deploySuccessfully,
+      catalog.hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
+      encodingFormat, catalog.connection)(sqlContext)
   }
 }
 

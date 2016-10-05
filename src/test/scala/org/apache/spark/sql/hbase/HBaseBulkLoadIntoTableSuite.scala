@@ -39,6 +39,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     val plan: LogicalPlan = parser.parse(sql)
     assert(plan != null)
+
     assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
 
     val l = plan.asInstanceOf[BulkLoadIntoTableCommand]

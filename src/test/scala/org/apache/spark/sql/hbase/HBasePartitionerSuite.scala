@@ -99,7 +99,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSQLContext(sc)
+    val hbaseContext = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)
@@ -226,7 +226,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSQLContext(sc)
+    val hbaseContext = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)
@@ -260,7 +260,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSQLContext(sc)
+    val hbaseContext = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)

@@ -84,7 +84,7 @@ case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val hbaseCatalog = sparkSession.catalog.asInstanceOf[HBaseCatalog]
-    hbaseCatalog.deleteTable(tableName)
+    hbaseCatalog.dropTable("", tableName, ignoreIfNotExists = true)
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
   }
@@ -171,7 +171,7 @@ case class BulkLoadIntoTableCommand(
     @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
-    @transient val hbContext = sparkSession.asInstanceOf[HBaseSQLContext]
+    @transient val hbContext = sparkSession.asInstanceOf[HBaseSparkSession]
 
     // tmp path for storing HFile
     @transient val tmpPath = Util.getTempFilePath(

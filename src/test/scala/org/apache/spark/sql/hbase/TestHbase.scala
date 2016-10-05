@@ -21,7 +21,7 @@ import org.apache.hadoop.hbase.{HBaseTestingUtility, MiniHBaseCluster}
 import org.apache.spark.{SparkConf, SparkContext}
 
 
-object TestHbase extends HBaseSQLContext(
+object TestHbase extends HBaseSparkSession(
   new SparkContext("local[2]", "TestSQLContext", new SparkConf(true)
     .set("spark.hadoop.hbase.zookeeper.quorum", "localhost"))) {
 

@@ -21,13 +21,15 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
-import org.apache.spark.sql.execution.exchange.EnsureRequirements
-import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner}
+import org.apache.spark.sql.execution.SparkPlanner
 import org.apache.spark.sql.hbase.execution.HBaseStrategies
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.internal.{SQLConf, SharedState}
+import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.exchange.EnsureRequirements
 
-class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
+class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   self =>
 
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
@@ -38,8 +40,8 @@ class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
 
   @transient
-  protected[sql] lazy val catalog: HBaseCatalog =
-    new HBaseCatalog(this, sc.hadoopConfiguration)
+  override  private[sql] lazy val sharedState: SharedState =
+    new HBaseSharedState(sc, this.sqlContext)
 
   experimental.extraStrategies = Seq((new SparkPlanner(sc, conf, Nil)
     with HBaseStrategies).HBaseDataSource)
@@ -51,4 +53,9 @@ class HBaseSQLContext(sc: SparkContext) extends SparkSession(sc) {
       // maybe added later
       Nil
   }
+}
+
+class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {
+  override lazy val externalCatalog: ExternalCatalog =
+    new HBaseCatalog(sqlContext, sc.hadoopConfiguration)
 }

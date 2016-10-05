@@ -32,7 +32,7 @@ object HBaseSQLCliDriver extends Logging {
   private val continuedPrompt = "".padTo(prompt.length, ' ')
   private val conf = new SparkConf()
   private val sc = new SparkContext(conf)
-  private val hbaseCtx = new HBaseSQLContext(sc)
+  private val hbaseCtx = new HBaseSparkSession(sc)
 
   private val QUIT = "QUIT"
   private val EXIT = "EXIT"

@@ -17,14 +17,12 @@
 
 package org.apache.spark.sql.hbase.api.java;
 
-import java.util.Map;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.hbase.HBaseSQLContext;
+import org.apache.spark.sql.hbase.HBaseSparkSession;
 import org.apache.spark.sql.hbase.TestBase;
 import org.junit.After;
 import org.junit.Before;
@@ -42,7 +40,7 @@ public class JavaAPISuite extends TestBase implements Serializable {
       System.setProperty("spark.hadoop.hbase.zookeeper.quorum", "localhost");
       SparkConf scf = new SparkConf(true);
       sc = new JavaSparkContext("local", "JavaAPISuite", scf);
-      hsc = new HBaseSQLContext(sc);
+      hsc = new HBaseSparkSession(sc);
       testUtil = new HBaseTestingUtility(hsc.sparkContext().hadoopConfiguration());
       try {
         testUtil.cleanupTestDir();
