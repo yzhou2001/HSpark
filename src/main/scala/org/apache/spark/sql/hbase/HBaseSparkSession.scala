@@ -28,13 +28,15 @@ import org.apache.spark.sql.hbase.execution.HBaseStrategies
 import org.apache.spark.sql.internal.SharedState
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
+import org.apache.spark.sql.internal.SQLConf
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   self =>
 
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
 
-  @transient lazy val conf: RuntimeConfig = new RuntimeConfig(new HBaseSQLConf)
+  @transient
+  override lazy val conf: SQLConf = new HBaseSQLConf
 
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
