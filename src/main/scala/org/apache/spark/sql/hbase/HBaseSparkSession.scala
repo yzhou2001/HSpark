@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
 import org.apache.spark.sql.execution.SparkPlanner
 import org.apache.spark.sql.hbase.execution.HBaseStrategies
-import org.apache.spark.sql.internal.{SQLConf, SharedState}
+import org.apache.spark.sql.internal.SharedState
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
 
@@ -34,7 +34,7 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
 
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
 
-  protected[sql] override lazy val conf: SQLConf = new HBaseSQLConf
+  @transient lazy val conf: RuntimeConfig = new RuntimeConfig(new HBaseSQLConf)
 
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))

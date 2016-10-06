@@ -66,7 +66,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         val deploySuccessfully: Option[Boolean],
                         @transient val filterPred: Option[Expression],
                         @transient sqlContext: SQLContext)
-  extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
+  extends RDD[Row](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor

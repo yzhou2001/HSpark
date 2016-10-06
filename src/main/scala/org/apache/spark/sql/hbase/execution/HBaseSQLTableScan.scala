@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.plans.physical.RangePartitioning
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.Row
 
 /**
  * :: DeveloperApi ::
@@ -33,7 +34,9 @@ import org.apache.spark.sql.execution.SparkPlan
 case class HBaseSQLTableScan(
                               relation: HBaseRelation,
                               output: Seq[Attribute],
-                              result: RDD[InternalRow]) extends SparkPlan {
+                              result: RDD[Row]) extends SparkPlan {
+  override def children: Seq[SparkPlan] = Nil
+
   override def outputPartitioning = {
     var ordering = List[SortOrder]()
     for (key <- relation.partitionKeys) {

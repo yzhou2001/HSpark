@@ -180,7 +180,7 @@ private[hbase] trait HBaseStrategies {
                                           projectList: Seq[NamedExpression],
                                           filterPredicates: Seq[Expression],
                                           scanBuilder:
-                                          (Seq[Attribute], Seq[Expression]) => RDD[InternalRow]) = {
+                                          (Seq[Attribute], Seq[Expression]) => RDD[Row]) = {
 
       val projectSet = AttributeSet(projectList.flatMap(_.references))
       val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
