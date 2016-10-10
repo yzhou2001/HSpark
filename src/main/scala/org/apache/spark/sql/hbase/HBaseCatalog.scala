@@ -511,8 +511,7 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
     val byteArrayInputStream = new ByteArrayInputStream(value)
     val inflaterInputStream = new InflaterInputStream(byteArrayInputStream)
     val objectInputStream = new ObjectInputStream(inflaterInputStream)
-    val hbaseRelation: HBaseRelation
-    = objectInputStream.readObject().asInstanceOf[HBaseRelation]
+    val hbaseRelation: HBaseRelation = objectInputStream.readObject().asInstanceOf[HBaseRelation]
     hbaseRelation.context = sqlContext
     hbaseRelation.setConfig(configuration)
     hbaseRelation
