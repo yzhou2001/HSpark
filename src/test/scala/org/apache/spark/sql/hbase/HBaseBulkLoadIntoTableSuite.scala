@@ -83,7 +83,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("load data into hbase") {
 
     val drop = "drop table testblk"
-    val executeSql0 = TestHbase.executeSql(drop)
+    val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
     } catch {
@@ -100,10 +100,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
@@ -111,7 +111,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load data into table
     val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     checkAnswer(TestHbase.sql("select * from testblk"),
@@ -126,7 +126,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("load parall data into hbase") {
 
     val drop = "drop table testblk"
-    val executeSql0 = TestHbase.executeSql(drop)
+    val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
     } catch {
@@ -145,10 +145,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
@@ -156,7 +156,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     checkAnswer(TestHbase.sql("select * from testblk"),
@@ -171,7 +171,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("load data with null column values into hbase") {
 
     val drop = "drop table testNullColumnBulkload"
-    val executeSql0 = TestHbase.executeSql(drop)
+    val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
     } catch {
@@ -188,10 +188,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testNullColumnBulkload"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadNullableData.txt'"
@@ -199,7 +199,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load data into table
     val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testNullColumnBulkload"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     val sqlResult = TestHbase.sql("select * from testNullColumnBulkload")
@@ -221,7 +221,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("load parall data with null column values into hbase") {
 
     val drop = "drop table testNullColumnBulkload"
-    val executeSql0 = TestHbase.executeSql(drop)
+    val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
     } catch {
@@ -240,10 +240,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testNullColumnBulkload"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadNullableData.txt'"
@@ -251,7 +251,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testNullColumnBulkload"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     val sqlResult = TestHbase.sql("select * from testNullColumnBulkload")
@@ -282,10 +282,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
@@ -293,7 +293,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     checkAnswer(TestHbase.sql("select * from testblk"),
@@ -319,10 +319,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
@@ -330,7 +330,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     checkAnswer(TestHbase.sql("select * from testblk"),
@@ -347,7 +347,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val splitKeys = Seq(4, 8, 12).map { x =>
       BinaryBytesUtils.create(IntegerType).toBytes(x)
     }
-    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
+    TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createHBaseUserTable(TableName.valueOf("presplit_table"),
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
@@ -359,10 +359,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/splitLoadData.txt'"
@@ -370,7 +370,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     assert(TestHbase.sql("select * from testblk").collect().length == 16)
@@ -384,7 +384,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val splitKeys = Seq(4, 8, 12).map { x =>
       BinaryBytesUtils.create(IntegerType).toBytes(x)
     }
-    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
+    TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createHBaseUserTable(TableName.valueOf("presplit_table"),
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
@@ -396,10 +396,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from testblk limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/splitLoadData.txt'"
@@ -407,7 +407,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     assert(runSql("select * from testblk").length == 16)
@@ -426,7 +426,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       BinaryBytesUtils.create(IntegerType).toBytes(x)
     }
 
-    TestHbase.catalog.createHBaseUserTable(
+    TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createHBaseUserTable(
       TableName.valueOf("REGION_CNT_131_HTBL"),
       Set("f"),
       splitKeys.toArray)
@@ -444,10 +444,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       s"""select * from region_cnt_131 limit 5"""
         .stripMargin
 
-    val executeSql1 = TestHbase.executeSql(sql1)
+    val executeSql1 = TestHbase.sessionState.executeSql(sql1)
     executeSql1.toRdd.collect()
 
-    val executeSql2 = TestHbase.executeSql(sql2)
+    val executeSql2 = TestHbase.sessionState.executeSql(sql2)
     executeSql2.toRdd.collect()
 
     val inputFile = "'" + hbaseHome + "/131_regions.txt'"
@@ -455,7 +455,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     // then load parall data into table
     val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE region_cnt_131"
 
-    val executeSql3 = TestHbase.executeSql(loadSql)
+    val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
 
     assert(runSql("select * from region_cnt_131").length == 260)
