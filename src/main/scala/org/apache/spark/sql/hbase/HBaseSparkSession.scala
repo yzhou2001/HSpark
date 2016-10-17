@@ -25,10 +25,9 @@ import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
 import org.apache.spark.sql.execution.SparkPlanner
 import org.apache.spark.sql.hbase.execution.HBaseStrategies
-import org.apache.spark.sql.internal.SharedState
+import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
-import org.apache.spark.sql.internal.SQLConf
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   self =>
@@ -36,7 +35,7 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
 
   @transient
-  override lazy val conf: SQLConf = new HBaseSQLConf
+  override private[sql] lazy val sessionState: SessionState = new HBaseSessionState(this)
 
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
@@ -45,16 +44,20 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   override  private[sql] lazy val sharedState: SharedState =
     new HBaseSharedState(sc, this.sqlContext)
 
-  experimental.extraStrategies = Seq((new SparkPlanner(sc, conf, Nil)
+  experimental.extraStrategies = Seq((new SparkPlanner(sc, sessionState.conf, Nil)
     with HBaseStrategies).HBaseDataSource)
 
   @transient
   protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
-    val batches = Batch("Add exchange", Once, EnsureRequirements(conf)) ::
+    val batches = Batch("Add exchange", Once, EnsureRequirements(sessionState.conf)) ::
       // No AddCoprocessor now for lack of unsafe support in coprocessor
       // maybe added later
       Nil
   }
+}
+
+class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
+  override lazy val conf: SQLConf = new HBaseSQLConf
 }
 
 class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {

@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, LogicalRelation}
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase.{HBasePartition, HBaseRawType, HBaseRelation, KeyColumn}
 import org.apache.spark.sql.types._
@@ -180,7 +180,7 @@ private[hbase] trait HBaseStrategies {
                                           projectList: Seq[NamedExpression],
                                           filterPredicates: Seq[Expression],
                                           scanBuilder:
-                                          (Seq[Attribute], Seq[Expression]) => RDD[Row]) = {
+                                          (Seq[Attribute], Seq[Expression]) => RDD[InternalRow]) = {
 
       val projectSet = AttributeSet(projectList.flatMap(_.references))
       val filterSet = AttributeSet(filterPredicates.flatMap(_.references))

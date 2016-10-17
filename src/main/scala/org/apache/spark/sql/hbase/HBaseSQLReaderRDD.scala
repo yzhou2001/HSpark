@@ -66,7 +66,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         val deploySuccessfully: Option[Boolean],
                         @transient val filterPred: Option[Expression],
                         @transient sqlContext: SQLContext)
-  extends RDD[Row](sqlContext.sparkContext, Nil) with Logging {
+  extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
@@ -144,7 +144,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
 
   private def createIterator(context: TaskContext,
                              scanner: ResultScanner,
-                             otherFilters: Option[Expression]): Iterator[MutableRow] = {
+                             otherFilters: Option[Expression]): Iterator[InternalRow] = {
     val finalOutput = if (hasSubPlan) {
       subplan.get.output
     } else if (otherFilters.isDefined) {
@@ -169,7 +169,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         }
       } else null
 
-    val iterator = new Iterator[MutableRow] {
+    val iterator = new Iterator[InternalRow] {
       override def hasNext: Boolean = {
         if (!finished) {
           if (!gotNext) {
@@ -184,7 +184,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
         !finished
       }
 
-      override def next(): MutableRow = {
+      override def next(): InternalRow = {
         if (hasNext) {
           gotNext = false
           rowBuilder(projections, result, row)

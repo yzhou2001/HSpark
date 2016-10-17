@@ -107,7 +107,7 @@ private[hbase] case class HBaseRelation(
                                          encodingFormat: String = "binaryformat",
                                          @transient connection : Connection = null)
                                        (@transient var context: SQLContext)
-  extends BaseRelation with CatalystScan with InsertableRelation with Serializable {
+  extends BaseRelation with InsertableRelation with Serializable {
   @transient lazy val logger = Logger.getLogger(getClass.getName)
 
   @transient lazy val keyColumns = allColumns.filter(_.isInstanceOf[KeyColumn])
@@ -736,7 +736,7 @@ private[hbase] case class HBaseRelation(
   }
 
 
-  def buildScan(requiredColumns: Seq[Attribute], filters: Seq[Expression]): RDD[Row] = {
+  def buildScan(requiredColumns: Seq[Attribute], filters: Seq[Expression]): RDD[InternalRow] = {
     require(filters.size < 2, "Internal logical error: unexpected filter list size")
     val filterPredicate = filters.headOption
     new HBaseSQLReaderRDD(
