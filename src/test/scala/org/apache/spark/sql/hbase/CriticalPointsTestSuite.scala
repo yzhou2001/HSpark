@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.spark._
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, HBaseKVHelper}
 import org.apache.spark.sql.types._

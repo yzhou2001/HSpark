@@ -18,7 +18,7 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.Logging
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.hbase.types.HBaseBytesType
 import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._

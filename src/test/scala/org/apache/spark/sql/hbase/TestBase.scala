@@ -22,7 +22,7 @@ import java.io.File
 import java.util.Date
 
 import org.apache.hadoop.hbase.{HColumnDescriptor, HTableDescriptor, TableExistsException, TableName}
-import org.apache.spark.Logging
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.plans.logical
 import org.apache.spark.sql.catalyst.util._
 import org.apache.spark.sql.{DataFrame, Row}

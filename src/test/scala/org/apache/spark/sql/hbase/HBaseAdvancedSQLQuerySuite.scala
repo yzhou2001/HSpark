@@ -18,18 +18,19 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.spark.sql.types.{StructType, MetadataBuilder}
-import org.apache.spark.sql.{DataFrame, Row, SQLConf}
+import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.internal.SQLConf
 
 class HBaseAdvancedSQLQuerySuite extends TestBaseWithSplitData {
   import org.apache.spark.sql.hbase.TestHbase._
   import org.apache.spark.sql.hbase.TestHbase.implicits._
 
   test("aggregation with codegen") {
-    val originalValue = TestHbase.conf.codegenEnabled
-    setConf(SQLConf.CODEGEN_ENABLED, "true")
+    val originalValue = TestHbase.sessionState.conf.wholeStageEnabled
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "true")
     val result = sql("SELECT col1 FROM ta GROUP BY col1").collect()
     assert(result.length == 14, s"aggregation with codegen test failed on size")
-    setConf(SQLConf.CODEGEN_ENABLED, originalValue.toString)
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, originalValue.toString)
   }
 
   test("dsl simple select 0") {
@@ -56,7 +57,7 @@ class HBaseAdvancedSQLQuerySuite extends TestBaseWithSplitData {
     def validateMetadata(rdd: DataFrame): Unit = {
       assert(rdd.schema("col1").metadata.getString(docKey) == docValue)
     }
-    personWithMeta.registerTempTable("personWithMeta")
+    personWithMeta.createOrReplaceTempView("personWithMeta")
     validateMetadata(personWithMeta.select($"col1"))
     validateMetadata(personWithMeta.select($"col1"))
     validateMetadata(personWithMeta.select($"col7", $"col1"))

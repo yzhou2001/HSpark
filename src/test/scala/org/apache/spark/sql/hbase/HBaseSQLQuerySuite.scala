@@ -20,7 +20,6 @@ package org.apache.spark.sql.hbase
 import java.util.TimeZone
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.hbase.TestData._
 import org.apache.spark.sql.types._
 
@@ -51,7 +50,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
   test("grouping on nested fields") {
     read.json(sparkContext.parallelize( """{"nested": {"attribute": 1}, "v": 2}""" :: Nil))
-      .registerTempTable("rows")
+      .createOrReplaceTempView("rows")
 
     checkAnswer(
       sql(
@@ -574,7 +573,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   }
 
   test("SET commands semantics using sql()") {
-    conf.clear()
+    sessionState.conf.clear()
     val testKey = "test.k.0"
     val testVal = "test.val.0"
     val nonexistentKey = "nonexistent"
@@ -962,11 +961,11 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   }
 
   test("SPARK-4322 Grouping field with struct field as sub expression") {
-    read.json(sparkContext.makeRDD( """{"a": {"b": [{"c": 1}]}}""" :: Nil)).registerTempTable("dt")
+    read.json(sparkContext.makeRDD( """{"a": {"b": [{"c": 1}]}}""" :: Nil)).createOrReplaceTempView("dt")
     checkAnswer(sql("SELECT a.b[0].c FROM dt GROUP BY a.b[0].c"), Row(1))
     dropTempTable("dt")
 
-    read.json(sparkContext.makeRDD( """{"a": {"b": 1}}""" :: Nil)).registerTempTable("dt")
+    read.json(sparkContext.makeRDD( """{"a": {"b": 1}}""" :: Nil)).createOrReplaceTempView("dt")
     checkAnswer(sql("SELECT a.b + 1 FROM dt GROUP BY a.b + 1"), Row(2))
     dropTempTable("dt")
   }
@@ -988,10 +987,10 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   test("Supporting relational operator '<=>' in Spark SQL") {
     val nullCheckData1 = TestData(1, "1") :: TestData(2, null) :: Nil
     val rdd1 = sparkContext.parallelize((0 to 1).map(i => nullCheckData1(i)))
-    rdd1.toDF().registerTempTable("nulldata1")
+    rdd1.toDF().createOrReplaceTempView("nulldata1")
     val nullCheckData2 = TestData(1, "1") :: TestData(2, null) :: Nil
     val rdd2 = sparkContext.parallelize((0 to 1).map(i => nullCheckData2(i)))
-    rdd2.toDF().registerTempTable("nulldata2")
+    rdd2.toDF().createOrReplaceTempView("nulldata2")
     checkAnswer(sql("SELECT nulldata1.k FROM nulldata1 join " +
       "nulldata2 on nulldata1.v <=> nulldata2.v"),
       (1 to 2).map(i => Row(i)))
@@ -1000,7 +999,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   test("Multi-column COUNT(DISTINCT ...)") {
     val data = TestData(1, "val_1") :: TestData(2, "val_2") :: Nil
     val rdd = sparkContext.parallelize((0 to 1).map(i => data(i)))
-    rdd.toDF().registerTempTable("distinctData")
+    rdd.toDF().createOrReplaceTempView("distinctData")
     checkAnswer(sql("SELECT COUNT(DISTINCT k,v) FROM distinctData"), Row(2))
   }
 }

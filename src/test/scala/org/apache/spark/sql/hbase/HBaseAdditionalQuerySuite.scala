@@ -20,9 +20,10 @@ package org.apache.spark.sql.hbase
 import org.apache.hadoop.hbase.TableName
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.GenericRow
-import org.apache.spark.sql.execution.Exchange
 import org.apache.spark.sql.hbase.util.HBaseKVHelper
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.sql.internal.SQLConf
 
 class HBaseAdditionalQuerySuite extends TestBase {
 
@@ -43,19 +44,19 @@ class HBaseAdditionalQuerySuite extends TestBase {
     }
 
     val splitKeys: Array[HBaseRawType] = Array(
-      generateRowKey(Array(1024, UTF8String("0b"), 0), 3),
-      generateRowKey(Array(2048, UTF8String("cc"), 1024), 4),
-      generateRowKey(Array(4096, UTF8String("0a"), 0), 4),
-      generateRowKey(Array(4096, UTF8String("0b"), 1024), 7),
-      generateRowKey(Array(4096, UTF8String("cc"), 0), 7),
-      generateRowKey(Array(4096, UTF8String("cc"), 1000))
+      generateRowKey(Array(1024, UTF8String.fromString("0b"), 0), 3),
+      generateRowKey(Array(2048, UTF8String.fromString("cc"), 1024), 4),
+      generateRowKey(Array(4096, UTF8String.fromString("0a"), 0), 4),
+      generateRowKey(Array(4096, UTF8String.fromString("0b"), 1024), 7),
+      generateRowKey(Array(4096, UTF8String.fromString("cc"), 0), 7),
+      generateRowKey(Array(4096, UTF8String.fromString("cc"), 1000))
     )
-    if (TestHbase.catalog.tableExists(Seq("presplit_table")))
+    if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists("", "presplit_table"))
     {
       dropNativeHbaseTable("presplit_table")
     }
-    TestHbase.catalog.createHBaseUserTable(TableName.valueOf("presplit_table"),
-      Set("cf"), splitKeys, useCoprocessor)
+    TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createHBaseUserTable(
+      TableName.valueOf("presplit_table"), Set("cf"), splitKeys, useCoprocessor)
 
     val sql =
       s"""CREATE TABLE testblk(col1 INT, col2 STRING, col3 INT, col4 STRING,
@@ -104,7 +105,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
   def createTableFromParquet() = {
     val outputFile = hbaseHome + "/users.parquet"
     val parquetTable = TestHbase.read.parquet(outputFile)
-    parquetTable.registerTempTable("parquetTable")
+    parquetTable.createOrReplaceTempView("parquetTable")
   }
 
   override protected def afterAll() = {
@@ -167,22 +168,22 @@ class HBaseAdditionalQuerySuite extends TestBase {
   }
 
   test("NO Coprocessor and No CustomerFilter Test") {
-    val origValOfCoprocessor = TestHbase.conf.getConf(HBaseSQLConf.USE_COPROCESSOR, "true")
-    val origValOfCustomfilter = TestHbase.conf.getConf(HBaseSQLConf.USE_CUSTOMFILTER, "true")
+    val origValOfCoprocessor = TestHbase.sessionState.conf.getConfString(HBaseSQLConf.USE_COPROCESSOR, "true")
+    val origValOfCustomfilter = TestHbase.sessionState.conf.getConfString(HBaseSQLConf.USE_CUSTOMFILTER, "true")
 
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, "false")
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, "false")
 
     val r1 = runSql(
       "select grade,class, subject , teacher_name, teacher_age from spark_teacher_3key where grade = 1 or class < 3")
-    assert(r1.size == 12)
+    assert(r1.length == 12)
 
     val r2 = runSql(
       "select school_identification from spark_people where school_director is null")
-    assert(r2.size == 2)
+    assert(r2.length == 2)
 
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, origValOfCoprocessor)
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, origValOfCustomfilter)
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, origValOfCoprocessor)
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, origValOfCustomfilter)
   }
 
   test("DataFrame Test") {
@@ -206,32 +207,32 @@ class HBaseAdditionalQuerySuite extends TestBase {
   }
 
   test("UDF Test with custom filter but without coprocessor") {
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, "false")
     def myFilter(s: String) = s contains "_1_2"
     TestHbase.udf.register("myFilter", myFilter _)
     val result = TestHbase.sql("Select count(*) from spark_teacher_3key WHERE myFilter(teacher_name)")
     result.foreach(r => require(r.getLong(0) == 3L))
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, "true")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, "true")
   }
 
   test("UDF Test with coprocessor but without custom filter") {
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, "false")
     def myFilter(s: String) = s contains "_1_2"
     TestHbase.udf.register("myFilter", myFilter _)
     val result = TestHbase.sql("Select count(*) from spark_teacher_3key WHERE myFilter(teacher_name)")
     result.foreach(r => require(r.getLong(0) == 3L))
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, "true")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, "true")
   }
 
   test("UDF Test without coprocessor and custom filter") {
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, "false")
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, "false")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, "false")
     def myFilter(s: String) = s contains "_1_2"
     TestHbase.udf.register("myFilter", myFilter _)
     val result = TestHbase.sql("Select count(*) from spark_teacher_3key WHERE myFilter(teacher_name)")
     result.foreach(r => require(r.getLong(0) == 3L))
-    TestHbase.setConf(HBaseSQLConf.USE_COPROCESSOR, "true")
-    TestHbase.setConf(HBaseSQLConf.USE_CUSTOMFILTER, "true")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_COPROCESSOR, "true")
+    TestHbase.sessionState.conf.setConfString(HBaseSQLConf.USE_CUSTOMFILTER, "true")
   }
 
   test("group test for presplit table with coprocessor but without codegen") {
@@ -243,17 +244,17 @@ class HBaseAdditionalQuerySuite extends TestBase {
   }
 
   test("group test for presplit table with codegen and coprocessor") {
-    val originalValue = TestHbase.conf.codegenEnabled
-    TestHbase.setConf(SQLConf.CODEGEN_ENABLED, "true")
+    val originalValue = TestHbase.sessionState.conf.wholeStageEnabled
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "true")
     aggregationTest()
-    TestHbase.setConf(SQLConf.CODEGEN_ENABLED, originalValue.toString)
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, originalValue.toString)
   }
 
   test("group test for presplit table with codegen but without coprocessor") {
-    val originalValue = TestHbase.conf.codegenEnabled
-    TestHbase.setConf(SQLConf.CODEGEN_ENABLED, "true")
+    val originalValue = TestHbase.sessionState.conf.wholeStageEnabled
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "true")
     aggregationTest(useCoprocessor = false)
-    TestHbase.setConf(SQLConf.CODEGEN_ENABLED, originalValue.toString)
+    TestHbase.sessionState.conf.setConfString(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, originalValue.toString)
   }
 
   def aggregationTest(useCoprocessor: Boolean = true) = {

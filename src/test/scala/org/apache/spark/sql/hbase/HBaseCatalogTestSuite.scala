@@ -25,7 +25,8 @@ import org.apache.spark.sql.sources.LogicalRelation
 import org.apache.spark.sql.types._
 
 class HBaseCatalogTestSuite extends TestBase {
-  val (catalog, configuration) = (TestHbase.catalog, TestHbase.sparkContext.hadoopConfiguration)
+  val (catalog, configuration) = (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog],
+    TestHbase.sparkContext.hadoopConfiguration)
 
   test("Create Table") {
     // prepare the test data
@@ -117,7 +118,7 @@ class HBaseCatalogTestSuite extends TestBase {
     // prepare the test data
     val tableName = "testTable"
 
-    catalog.deleteTable(tableName)
+    catalog.dropTable(tableName)
     assert(catalog.tableExists(Seq(tableName)) === false)
     catalog.stopAdmin()
   }

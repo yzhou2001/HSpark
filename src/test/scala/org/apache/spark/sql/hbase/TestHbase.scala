@@ -39,8 +39,8 @@ object TestHbase extends HBaseSparkSession(
 
   // The following operation will initialize the HBaseCatalog.
   // And it should be done after starting MiniHBaseCluster
-  catalog.deploySuccessfully_internal = Some(true)
-  catalog.pwdIsAccessible = true
+  sharedState.externalCatalog.asInstanceOf[HBaseCatalog].deploySuccessfully_internal = Some(true)
+  sharedState.externalCatalog.asInstanceOf[HBaseCatalog].pwdIsAccessible = true
 
-  def hbaseAdmin = catalog.admin
+  def hbaseAdmin = sharedState.externalCatalog.asInstanceOf[HBaseCatalog].admin
 }

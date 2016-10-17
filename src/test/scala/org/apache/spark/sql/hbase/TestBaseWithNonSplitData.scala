@@ -63,7 +63,7 @@ class TestBaseWithNonSplitData extends TestBase {
       createNativeHbaseTable(hbaseTable, TestHbaseColFamilies)
     }
 
-    if (TestHbase.catalog.tableExists(Seq(tableName))) {
+    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
       val dropSql = s"DROP TABLE $tableName"
       runSql(dropSql)
     }
