@@ -22,9 +22,10 @@ import java.io.{ByteArrayOutputStream, DataOutputStream}
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.spark.sql.catalyst.expressions.{GenericRow, Row}
+import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
 import org.apache.spark.sql.types._
+import  org.apache.spark.sql.Row
 
 /**
  * HBaseMainTest
@@ -85,8 +86,8 @@ class TestBaseWithSplitData extends TestBase {
         null
       }
 
-      TestHbase.catalog.createTable(TableName_a, null,
-        HbaseTableName.getNameAsString, allColumns, splitKeys)
+//      TestHbase.sharedState.externalCatalog.createTable(TableName_a, null,
+//        HbaseTableName.getNameAsString, allColumns, splitKeys)
 
       runSql( s"""CREATE TABLE $TableName_b(col1 STRING, col2 BYTE, col3 SHORT, col4 INTEGER,
           col5 LONG, col6 FLOAT, col7 INTEGER, PRIMARY KEY(col7, col1, col3))

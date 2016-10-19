@@ -40,11 +40,11 @@ class HBaseTpcMiniTestSuite extends TestBase {
      * create hbase table if it does not exists
      */
     super.beforeAll()
-    if (!TestHbase.catalog.admin.tableExists(TableName.valueOf(hbaseTableName))) {
+    if (!TestHbase.hbaseAdmin.tableExists(TableName.valueOf(hbaseTableName))) {
       val descriptor = new HTableDescriptor(TableName.valueOf(tableName))
       hbaseFamilies.foreach { f => descriptor.addFamily(new HColumnDescriptor(f))}
       try {
-        TestHbase.catalog.admin.createTable(descriptor)
+        TestHbase.hbaseAdmin.createTable(descriptor)
       } catch {
         case e: TableExistsException =>
           logError(s"Table already exists $tableName", e)
@@ -56,7 +56,7 @@ class HBaseTpcMiniTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.catalog.tableExists(Seq(tableName))) {
+    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)

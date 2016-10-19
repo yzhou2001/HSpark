@@ -16,12 +16,12 @@
  */
 package org.apache.spark.sql.hbase
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase._
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.GenericRow
-import org.apache.spark.sql.catalyst.plans.logical.Subquery
+import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.util.HBaseKVHelper
-import org.apache.spark.sql.sources.LogicalRelation
 import org.apache.spark.sql.types._
 
 class HBaseCatalogTestSuite extends TestBase {
@@ -57,9 +57,21 @@ class HBaseCatalogTestSuite extends TestBase {
       new GenericRow(Array(4096.0, "SF", 512: Short))
     ).map(HBaseKVHelper.makeRowKey(_, Seq(DoubleType, StringType, ShortType)))
 
-    catalog.createTable(tableName, namespace, hbaseTableName, allColumns, splitKeys)
 
-    assert(catalog.tableExists(Seq(tableName)) === true)
+    val properties = collection.immutable.Map[String, String](
+      "tableName" -> tableName, "namespace" -> namespace,
+      "hbaseTableName" -> hbaseTableName ,"encodingFormat" -> "binaryformat")
+
+    // TODO:
+//    properties = properties + ("colsSeq" -> "")
+//    properties = properties + ("keyCols" -> "")
+//    properties = properties + ("nonKeyCols" -> "")
+
+    val catalogTable = CatalogTable(null, null, null, null, properties = properties)
+
+    catalog.createTable(namespace, catalogTable, ignoreIfExists = true)
+
+    assert(catalog.tableExists("", tableName) === true)
     catalog.stopAdmin()
   }
 
@@ -86,7 +98,7 @@ class HBaseCatalogTestSuite extends TestBase {
     assert(result.nonKeyColumns.head.dataType === BooleanType)
 
     val relation = catalog.lookupRelation(Seq(tableName))
-    val subquery = relation.asInstanceOf[Subquery]
+    val subquery = relation.asInstanceOf[SubqueryAlias]
     val hbRelation = subquery.child.asInstanceOf[LogicalRelation].relation.asInstanceOf[HBaseRelation]
     assert(hbRelation.nonKeyColumns.map(_.family) == List("family1", "family2"))
     val keyColumns = Seq(KeyColumn("column1", StringType, 0), KeyColumn("column2", IntegerType, 1))
@@ -118,15 +130,15 @@ class HBaseCatalogTestSuite extends TestBase {
     // prepare the test data
     val tableName = "testTable"
 
-    catalog.dropTable(tableName)
-    assert(catalog.tableExists(Seq(tableName)) === false)
+    catalog.dropTable("", tableName, ignoreIfNotExists = true)
+    assert(catalog.tableExists("", tableName) === false)
     catalog.stopAdmin()
   }
 
   test("Check Logical Table Exist") {
     val tableName = "non-exist"
 
-    assert(catalog.tableExists(Seq(tableName)) === false)
+    assert(catalog.tableExists("", tableName) === false)
     catalog.stopAdmin()
   }
 }

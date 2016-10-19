@@ -22,6 +22,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.hbase.types.HBaseBytesType
 import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 class BytesUtilsSuite extends FunSuite with BeforeAndAfterAll with Logging {
@@ -39,7 +40,7 @@ class BytesUtilsSuite extends FunSuite with BeforeAndAfterAll with Logging {
   def compare(a: Array[Byte], b: Array[Byte]): Int = {
     val length = Math.min(a.length, b.length)
     var result: Int = 0
-    for (i <- 0 to length - 1) {
+    for (i <- 0 until length) {
       val diff: Int = (a(i) & 0xff).asInstanceOf[Byte] - (b(i) & 0xff).asInstanceOf[Byte]
       if (diff != 0) {
         result = diff
@@ -80,8 +81,9 @@ class BytesUtilsSuite extends FunSuite with BeforeAndAfterAll with Logging {
       .toBytes(-12.asInstanceOf[Short]), 0) === -12)
 
     assert(BinaryBytesUtils.toUTF8String(BinaryBytesUtils.create(StringType).toBytes("abc"), 0, 3)
-      === UTF8String("abc"))
-    assert(BinaryBytesUtils.toUTF8String(BinaryBytesUtils.create(StringType).toBytes(""), 0, 0) === UTF8String(""))
+      === UTF8String.fromString("abc"))
+    assert(BinaryBytesUtils.toUTF8String(BinaryBytesUtils.create(StringType).toBytes(""), 0, 0)
+      === UTF8String.fromString(""))
 
     assert(BinaryBytesUtils.toByte(BinaryBytesUtils.create(ByteType)
       .toBytes(5.asInstanceOf[Byte]), 0) === 5)

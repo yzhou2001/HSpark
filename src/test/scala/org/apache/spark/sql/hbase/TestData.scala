@@ -28,7 +28,7 @@ object TestData {
 
   val testData = TestHbase.sparkContext.parallelize(
     (1 to 100).map(i => TestData(i, i.toString))).toDF()
-  testData.registerTempTable("testData")
+  testData.createOrReplaceTempView("testData")
 
   val negativeData = TestHbase.sparkContext.parallelize(
     (1 to 100).map(i => TestData(-i, (-i).toString))).toDF()

@@ -99,7 +99,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSparkSession(sc)
+    val hbaseSparkSession = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)
@@ -108,7 +108,7 @@ class HBasePartitionerSuite extends TestBase {
     allColumns = allColumns :+ NonKeyColumn("column4", BooleanType, family1, "qualifier1")
 
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
-      allColumns, Some(true))(hbaseContext)
+      allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
     val lll = relation.output.find(_.name == "column2").get
     val llr = Literal.create(8, IntegerType)
@@ -226,7 +226,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSparkSession(sc)
+    val hbaseSparkSession = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)
@@ -235,7 +235,7 @@ class HBasePartitionerSuite extends TestBase {
     allColumns = allColumns :+ NonKeyColumn("column4", BooleanType, family1, "qualifier1")
 
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
-      allColumns, Some(true))(hbaseContext)
+      allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
     val lll = relation.output.find(_.name == "column1").get
     val llr = Literal.create(8, IntegerType)
@@ -260,7 +260,7 @@ class HBasePartitionerSuite extends TestBase {
     val family1 = "family1"
     val family2 = "family2"
 
-    val hbaseContext = new HBaseSparkSession(sc)
+    val hbaseSparkSession = new HBaseSparkSession(sc)
 
     var allColumns = List[AbstractColumn]()
     allColumns = allColumns :+ KeyColumn("column1", IntegerType, 0)
@@ -269,7 +269,7 @@ class HBasePartitionerSuite extends TestBase {
     allColumns = allColumns :+ NonKeyColumn("column4", BooleanType, family1, "qualifier1")
 
     val relation = HBaseRelation(tableName, namespace, hbaseTableName,
-      allColumns, Some(true))(hbaseContext)
+      allColumns, Some(true))(hbaseSparkSession.sqlContext)
 
     val lll = relation.output.find(_.name == "column1").get
     val llr = Literal.create(8, IntegerType)

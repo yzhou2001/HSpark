@@ -57,7 +57,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.catalog.tableExists(Seq(tableName))) {
+    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)
@@ -823,7 +823,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
 
   private def printRows(rows: Array[Row]) = {
     println("======= QUERY RESULTS ======")
-    for (i <- 0 until rows.size) {
+    for (i <- rows.indices) {
       println(rows(i).mkString(" | "))
     }
     println("============================")
