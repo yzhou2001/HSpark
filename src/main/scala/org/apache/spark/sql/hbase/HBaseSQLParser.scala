@@ -17,9 +17,17 @@
 
 package org.apache.spark.sql.hbase
 
+import org.apache.spark.sql.catalyst.parser.ParserUtils._
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.ShowTablesContext
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlParser
+import org.apache.spark.sql.hbase.execution.ShowTablesCommand
 import org.apache.spark.sql.internal.SQLConf
 
 class HBaseSQLParser(conf: SQLConf) extends SparkSqlParser(conf) {
-
+  def visitShowTables(ctx: ShowTablesContext): LogicalPlan = withOrigin(ctx) {
+    ShowTablesCommand(
+      Option(ctx.db).map(_.getText),
+      Option(ctx.pattern).map(string))
+  }
 }

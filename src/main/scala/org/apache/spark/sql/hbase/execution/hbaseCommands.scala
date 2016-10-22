@@ -93,7 +93,8 @@ case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
 }
 
 @DeveloperApi
-case object ShowTablesCommand extends RunnableCommand {
+case class ShowTablesCommand(databaseName: Option[String], tableIdentifierPattern: Option[String])
+  extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
@@ -323,4 +324,3 @@ case class BulkLoadIntoTableCommand(
 
   override def output = Nil
 }
-
