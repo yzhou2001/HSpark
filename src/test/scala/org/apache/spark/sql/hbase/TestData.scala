@@ -32,7 +32,7 @@ object TestData {
 
   val negativeData = TestHbase.sparkContext.parallelize(
     (1 to 100).map(i => TestData(-i, (-i).toString))).toDF()
-  negativeData.registerTempTable("negativeData")
+  negativeData.createOrReplaceTempView("negativeData")
 
   case class LargeAndSmallInts(a: Int, b: Int)
 
@@ -44,7 +44,7 @@ object TestData {
         LargeAndSmallInts(2, 2) ::
         LargeAndSmallInts(2147483646, 1) ::
         LargeAndSmallInts(3, 2) :: Nil).toDF()
-  largeAndSmallInts.registerTempTable("largeAndSmallInts")
+  largeAndSmallInts.createOrReplaceTempView("largeAndSmallInts")
 
   case class TestData2(a: Int, b: Int)
 
@@ -56,7 +56,7 @@ object TestData {
         TestData2(2, 2) ::
         TestData2(3, 1) ::
         TestData2(3, 2) :: Nil).toDF()
-  testData2.registerTempTable("testData2")
+  testData2.createOrReplaceTempView("testData2")
 
   case class DecimalData(a: BigDecimal, b: BigDecimal)
 
@@ -68,7 +68,7 @@ object TestData {
         DecimalData(2, 2) ::
         DecimalData(3, 1) ::
         DecimalData(3, 2) :: Nil).toDF()
-  decimalData.registerTempTable("decimalData")
+  decimalData.createOrReplaceTempView("decimalData")
 
   case class BinaryData(a: Array[Byte], b: Int)
 
@@ -79,7 +79,7 @@ object TestData {
         BinaryData("122".getBytes, 3) ::
         BinaryData("121".getBytes, 2) ::
         BinaryData("123".getBytes, 4) :: Nil).toDF()
-  binaryData.registerTempTable("binaryData")
+  binaryData.createOrReplaceTempView("binaryData")
 
   case class TestData3(a: Int, b: Option[Int])
 
@@ -87,7 +87,7 @@ object TestData {
     TestHbase.sparkContext.parallelize(
       TestData3(1, None) ::
         TestData3(2, Some(2)) :: Nil).toDF()
-  testData3.registerTempTable("testData3")
+  testData3.createOrReplaceTempView("testData3")
 
   val emptyTableData = logical.LocalRelation('a.int, 'b.int)
 
@@ -101,7 +101,7 @@ object TestData {
         UpperCaseData(4, "D") ::
         UpperCaseData(5, "E") ::
         UpperCaseData(6, "F") :: Nil).toDF()
-  upperCaseData.registerTempTable("upperCaseData")
+  upperCaseData.createOrReplaceTempView("upperCaseData")
 
   case class LowerCaseData(n: Int, l: String)
 
@@ -111,7 +111,7 @@ object TestData {
         LowerCaseData(2, "b") ::
         LowerCaseData(3, "c") ::
         LowerCaseData(4, "d") :: Nil).toDF()
-  lowerCaseData.registerTempTable("lowerCaseData")
+  lowerCaseData.createOrReplaceTempView("lowerCaseData")
 
   case class ArrayData(dt: Seq[Int], nestedData: Seq[Seq[Int]])
 
@@ -119,7 +119,7 @@ object TestData {
     TestHbase.sparkContext.parallelize(
       ArrayData(Seq(1, 2, 3), Seq(Seq(1, 2, 3))) ::
         ArrayData(Seq(2, 3, 4), Seq(Seq(2, 3, 4))) :: Nil)
-  arrayData.toDF().registerTempTable("arrayData")
+  arrayData.toDF().createOrReplaceTempView("arrayData")
 
   case class MapData(data: scala.collection.Map[Int, String])
 
@@ -130,19 +130,19 @@ object TestData {
         MapData(Map(1 -> "a3", 2 -> "b3", 3 -> "c3")) ::
         MapData(Map(1 -> "a4", 2 -> "b4")) ::
         MapData(Map(1 -> "a5")) :: Nil)
-  mapData.toDF().registerTempTable("mapData")
+  mapData.toDF().createOrReplaceTempView("mapData")
 
   case class StringData(s: String)
 
   val repeatedData =
     TestHbase.sparkContext.parallelize(List.fill(2)(StringData("test"))).toDF()
-  repeatedData.registerTempTable("repeatedData")
+  repeatedData.createOrReplaceTempView("repeatedData")
 
   val nullableRepeatedData =
     TestHbase.sparkContext.parallelize(
       List.fill(2)(StringData(null)) ++
         List.fill(2)(StringData("test"))).toDF()
-  nullableRepeatedData.registerTempTable("nullableRepeatedData")
+  nullableRepeatedData.createOrReplaceTempView("nullableRepeatedData")
 
   case class NullInts(a: Integer)
 
@@ -153,7 +153,7 @@ object TestData {
         NullInts(3) ::
         NullInts(null) :: Nil
     ).toDF()
-  nullInts.registerTempTable("nullInts")
+  nullInts.createOrReplaceTempView("nullInts")
 
   val allNulls =
     TestHbase.sparkContext.parallelize(
@@ -161,7 +161,7 @@ object TestData {
         NullInts(null) ::
         NullInts(null) ::
         NullInts(null) :: Nil).toDF()
-  allNulls.registerTempTable("allNulls")
+  allNulls.createOrReplaceTempView("allNulls")
 
   case class NullStrings(n: Int, s: String)
 
@@ -170,11 +170,12 @@ object TestData {
       NullStrings(1, "abc") ::
         NullStrings(2, "ABC") ::
         NullStrings(3, null) :: Nil).toDF()
-  nullStrings.registerTempTable("nullStrings")
+  nullStrings.createOrReplaceTempView("nullStrings")
 
   case class TableName(tableName: String)
 
-  TestHbase.sparkContext.parallelize(TableName("test") :: Nil).toDF().registerTempTable("tableName")
+  TestHbase.sparkContext.parallelize(TableName("test") :: Nil).toDF()
+    .createOrReplaceTempView("tableName")
 
   val unparsedStrings =
     TestHbase.sparkContext.parallelize(
@@ -188,7 +189,7 @@ object TestData {
   val timestamps = TestHbase.sparkContext.parallelize((1 to 3).map { i =>
     TimestampField(new Timestamp(i))
   }).toDF()
-  timestamps.registerTempTable("timestamps")
+  timestamps.createOrReplaceTempView("timestamps")
 
   case class IntField(i: Int)
 
@@ -203,11 +204,11 @@ object TestData {
   val person = TestHbase.sparkContext.parallelize(
     Person(0, "mike", 30) ::
       Person(1, "jim", 20) :: Nil)
-  person.toDF().registerTempTable("person")
+  person.toDF().createOrReplaceTempView("person")
   val salary = TestHbase.sparkContext.parallelize(
     Salary(0, 2000.0) ::
       Salary(1, 1000.0) :: Nil).toDF()
-  salary.registerTempTable("salary")
+  salary.createOrReplaceTempView("salary")
 
   case class ComplexData(m: Map[Int, String], s: TestData, a: Seq[Int], b: Boolean)
 
@@ -216,5 +217,5 @@ object TestData {
       ComplexData(Map(1 -> "1"), TestData(1, "1"), Seq(1), b = true)
         :: ComplexData(Map(2 -> "2"), TestData(2, "2"), Seq(2), b = false)
         :: Nil).toDF()
-  complexData.registerTempTable("complexData")
+  complexData.createOrReplaceTempView("complexData")
 }

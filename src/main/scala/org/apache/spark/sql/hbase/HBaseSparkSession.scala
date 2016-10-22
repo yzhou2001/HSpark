@@ -22,11 +22,11 @@ import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
+import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
-import org.apache.spark.sql.execution.SparkPlanner
+import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, SparkSqlParser}
 import org.apache.spark.sql.hbase.execution.HBaseStrategies
 import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
-import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
@@ -58,6 +58,11 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
 
 class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
   override lazy val conf: SQLConf = new HBaseSQLConf
+
+  /**
+   * Parser that extracts expressions, plans, table identifiers etc. from SQL texts.
+   */
+  override lazy val sqlParser: ParserInterface = new HBaseSQLParser(conf)
 }
 
 class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {

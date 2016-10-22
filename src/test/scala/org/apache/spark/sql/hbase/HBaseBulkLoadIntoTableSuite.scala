@@ -34,10 +34,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   // Test if we can parse 'LOAD DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1'
   test("bulk load parser test, local file") {
 
-    val parser = new HBaseSQLParser()
+    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1"
 
-    val plan: LogicalPlan = parser.parse(sql)
+    val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
 
     assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
@@ -51,10 +51,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   // Test if we can parse 'LOAD DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1'
   test("bulkload parser test, load hdfs file") {
 
-    val parser = new HBaseSQLParser()
+    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1"
 
-    val plan: LogicalPlan = parser.parse(sql)
+    val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
     assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
 
@@ -66,10 +66,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
   test("bulkload parser test, using delimiter") {
 
-    val parser = new HBaseSQLParser()
+    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1 FIELDS TERMINATED BY '\\|' "
 
-    val plan: LogicalPlan = parser.parse(sql)
+    val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
     assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
 
