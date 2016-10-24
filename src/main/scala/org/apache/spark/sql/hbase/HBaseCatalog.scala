@@ -178,11 +178,17 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   }
 
   override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {
-    throw new UnsupportedOperationException("createDatabase is not implemented")
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != dbDefinition.name &&
+      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != dbDefinition.name) {
+      admin.createNamespace(NamespaceDescriptor.create(dbDefinition.name).build())
+    }
   }
 
   override def dropDatabase(db: String, ignoreIfNotExists: Boolean, cascade: Boolean): Unit = {
-    throw new UnsupportedOperationException("dropDatabase is not implemented")
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != db &&
+      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != db) {
+      admin.deleteNamespace(db)
+    }
   }
 
   override def alterDatabase(dbDefinition: CatalogDatabase): Unit = {

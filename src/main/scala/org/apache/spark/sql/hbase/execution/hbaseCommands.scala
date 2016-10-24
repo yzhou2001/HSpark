@@ -51,8 +51,9 @@ import scala.collection.mutable.ArrayBuffer
 case class AlterDropColCommand(tableName: String, columnName: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    sparkSession.catalog.asInstanceOf[HBaseCatalog].alterTableDropNonKey(tableName, columnName)
-    sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
+    sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+      .alterTableDropNonKey(tableName, columnName)
+    sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin()
     Seq.empty[Row]
   }
 }
@@ -66,7 +67,7 @@ case class AlterAddColCommand(
                                colQualifier: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    val hbaseCatalog = sparkSession.catalog.asInstanceOf[HBaseCatalog]
+    val hbaseCatalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
     hbaseCatalog.alterTableAddNonKey(tableName,
       NonKeyColumn(
         colName, hbaseCatalog.getDataType(colType), colFamily, colQualifier)
@@ -80,7 +81,7 @@ case class AlterAddColCommand(
 case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    val hbaseCatalog = sparkSession.catalog.asInstanceOf[HBaseCatalog]
+    val hbaseCatalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
     hbaseCatalog.dropTable("", tableName, ignoreIfNotExists = true)
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
@@ -93,9 +94,9 @@ case class ShowTablesCommand(databaseName: Option[String], tableIdentifierPatter
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val tables = sparkSession.catalog.asInstanceOf[HBaseCatalog].getAllTableName
+    val tables = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getAllTableName
     tables.foreach(x => buffer.append(Row(x)))
-    sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
+    sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin()
     buffer
   }
 
@@ -107,7 +108,7 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val relation = sparkSession.catalog.asInstanceOf[HBaseCatalog].getTable(tableName)
+    val relation = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(tableName)
     if (relation.isDefined) {
       relation.get.allColumns.foreach {
         case keyColumn: KeyColumn =>
@@ -117,7 +118,7 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
           buffer.append(Row(nonKeyColumn.sqlName, nonKeyColumn.dataType.toString,
             "NON KEY COLUMN", nonKeyColumn.family, nonKeyColumn.qualifier))
       }
-      sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin
+      sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin
       buffer
     } else {
       sys.error(s"can not find table $tableName")
@@ -132,8 +133,8 @@ case class DescribeTableCommand(tableName: String) extends RunnableCommand {
 case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
   extends RunnableCommand {
   override def run(sparkSession: SparkSession) = {
-    val solvedRelation = sparkSession.sessionState.catalog.
-      lookupRelation(TableIdentifier(tableName))
+    val solvedRelation = sparkSession.sessionState.catalog
+      .lookupRelation(TableIdentifier(tableName))
     val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
@@ -162,8 +163,8 @@ case class BulkLoadIntoTableCommand(
   with Logging {
 
   override def run(sparkSession: SparkSession) = {
-    @transient val solvedRelation = sparkSession.sessionState.catalog.
-      lookupRelation(TableIdentifier(tableName))
+    @transient val solvedRelation = sparkSession.sessionState.catalog
+      .lookupRelation(TableIdentifier(tableName))
     @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
