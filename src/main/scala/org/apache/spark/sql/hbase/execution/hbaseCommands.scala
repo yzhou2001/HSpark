@@ -33,7 +33,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
-import org.apache.spark.sql.execution.command.RunnableCommand
+import org.apache.spark.sql.execution.command.{DDLUtils, RunnableCommand}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
 import org.apache.spark.sql.hbase._
@@ -42,6 +42,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.{SparkEnv, SparkHadoopWriter, TaskContext}
 import org.apache.hadoop.mapred.{JobConf, TaskID}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.util.SerializableConfiguration
 
 import scala.collection.mutable.ArrayBuffer
@@ -54,8 +55,6 @@ case class AlterDropColCommand(tableName: String, columnName: String) extends Ru
     sparkSession.catalog.asInstanceOf[HBaseCatalog].stopAdmin()
     Seq.empty[Row]
   }
-
-  override def output: Seq[Attribute] = Seq.empty
 }
 
 @DeveloperApi
@@ -75,8 +74,6 @@ case class AlterAddColCommand(
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
   }
-
-  override def output: Seq[Attribute] = Seq.empty
 }
 
 @DeveloperApi
@@ -88,8 +85,6 @@ case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
   }
-
-  override def output: Seq[Attribute] = Seq.empty
 }
 
 @DeveloperApi
@@ -324,3 +319,14 @@ case class BulkLoadIntoTableCommand(
 
   override def output = Nil
 }
+
+case class CreateTableCommand(table: CatalogTable, ifNotExists: Boolean) extends RunnableCommand {
+
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    DDLUtils.verifyTableProperties(table.properties.keys.toSeq, "CREATE TABLE")
+    DDLUtils.verifyTableProperties(table.storage.serdeProperties.keys.toSeq, "CREATE TABLE")
+    sparkSession.sessionState.catalog.createTable(table, ifNotExists)
+    Seq.empty[Row]
+  }
+}
+
