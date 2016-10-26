@@ -196,19 +196,26 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   }
 
   override def getDatabase(db: String): CatalogDatabase = {
-    throw new UnsupportedOperationException("alterDatabase is not implemented")
+    import scala.collection.JavaConverters._
+
+    val namespace = admin.getNamespaceDescriptor(db)
+    if (namespace != null) {
+      CatalogDatabase(namespace.getName, "", "", namespace.getConfiguration.asScala.toMap)
+    } else {
+      null
+    }
   }
 
   override def databaseExists(db: String): Boolean = {
-    throw new UnsupportedOperationException("alterDatabase is not implemented")
+    admin.getNamespaceDescriptor(db) != null
   }
 
   override def listDatabases(): Seq[String] = {
-    throw new UnsupportedOperationException("databaseExists is not implemented")
+    admin.listNamespaceDescriptors().map(_.getName)
   }
 
   override def listDatabases(pattern: String): Seq[String] = {
-    throw new UnsupportedOperationException("listDatabases is not implemented")
+    StringUtils.filterPattern(listDatabases(), pattern)
   }
 
   override def setCurrentDatabase(db: String): Unit = {

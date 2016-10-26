@@ -18,9 +18,9 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.hbase.execution._
 import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._
@@ -34,7 +34,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   // Test if we can parse 'LOAD DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1'
   test("bulk load parser test, local file") {
 
-    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
+    val parser = new SparkSqlParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1"
 
     val plan: LogicalPlan = parser.parsePlan(sql)
@@ -51,7 +51,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   // Test if we can parse 'LOAD DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1'
   test("bulkload parser test, load hdfs file") {
 
-    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
+    val parser = new SparkSqlParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1"
 
     val plan: LogicalPlan = parser.parsePlan(sql)
@@ -66,7 +66,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
   test("bulkload parser test, using delimiter") {
 
-    val parser = new HBaseSQLParser(TestHbase.sessionState.conf)
+    val parser = new SparkSqlParser(TestHbase.sessionState.conf)
     val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1 FIELDS TERMINATED BY '\\|' "
 
     val plan: LogicalPlan = parser.parsePlan(sql)

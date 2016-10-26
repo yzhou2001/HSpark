@@ -58,16 +58,18 @@ class HBaseCatalogTestSuite extends TestBase {
     ).map(HBaseKVHelper.makeRowKey(_, Seq(DoubleType, StringType, ShortType)))
 
 
-    val properties = collection.immutable.Map[String, String](
-      "tableName" -> tableName, "namespace" -> namespace,
-      "hbaseTableName" -> hbaseTableName ,"encodingFormat" -> "binaryformat")
+    var properties = collection.mutable.Map[String, String]()
+    properties += ("tableName" -> tableName)
+    properties += ("namespace" -> namespace)
+    properties += ("hbaseTableName" -> hbaseTableName)
+    properties += ("encodingFormat" -> "binaryformat")
 
     // TODO:
 //    properties = properties + ("colsSeq" -> "")
 //    properties = properties + ("keyCols" -> "")
 //    properties = properties + ("nonKeyCols" -> "")
 
-    val catalogTable = CatalogTable(null, null, null, null, properties = properties)
+    val catalogTable = CatalogTable(null, null, null, null, properties = properties.toMap)
 
     catalog.createTable(namespace, catalogTable, ignoreIfExists = true)
 

@@ -58,11 +58,6 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
 
 class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
   override lazy val conf: SQLConf = new HBaseSQLConf
-
-  /**
-   * Parser that extracts expressions, plans, table identifiers etc. from SQL texts.
-   */
-  override lazy val sqlParser: ParserInterface = new HBaseSQLParser(conf)
 }
 
 class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {
