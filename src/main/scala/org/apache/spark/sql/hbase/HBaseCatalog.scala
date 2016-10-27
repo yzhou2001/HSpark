@@ -229,14 +229,20 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   @transient var pwdIsAccessible = false
 
   override def createTable(db: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
-    val tableName = tableDefinition.properties("tableName")
-    val hbaseNamespace = tableDefinition.properties("namespace")
-    val hbaseTableName = tableDefinition.properties("hbaseTableName")
-    val encodingFormat = tableDefinition.properties("encodingFormat")
-    val colsSeq = tableDefinition.properties("colsSeq").split(",")
-    val keyCols = tableDefinition.properties("keyCols").split(";")
+    val tableName = tableDefinition.properties.getOrElse("tableName", null)
+    if (tableName == null) {
+      throw new Exception(s"Logical table name is not defined")
+    }
+    val hbaseNamespace = tableDefinition.properties.getOrElse("namespace", null)
+    val hbaseTableName = tableDefinition.properties.getOrElse("hbaseTableName", null)
+    if (hbaseTableName == null) {
+      throw new Exception(s"HBase table name is not defined")
+    }
+    val encodingFormat = tableDefinition.properties.getOrElse("encodingFormat", "binaryformat")
+    val colsSeq = tableDefinition.properties.getOrElse("colsSeq", "").split(",")
+    val keyCols = tableDefinition.properties.getOrElse("keyCols", "").split(";")
       .map { c => val cols = c.split(","); (cols(0), cols(1)) }
-    val nonKeyCols = tableDefinition.properties("nonKeyCols").split(";")
+    val nonKeyCols = tableDefinition.properties.getOrElse("nonKeyCols", "").split(";")
       .filterNot(_ == "")
       .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
 
@@ -257,7 +263,7 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
             nonKeyCol._4
           )
         }
-    }
+    }.toSeq
 
     try {
       val metadataTable = getMetadataTable
@@ -266,8 +272,7 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
         throw new Exception(s"The logical table: $tableName already exists")
       }
       // create a new hbase table for the user if not exist
-      val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn])
-        .asInstanceOf[Seq[NonKeyColumn]]
+      val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn]).asInstanceOf[Seq[NonKeyColumn]]
       val families = nonKeyColumns.map(_.family).toSet
       val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
       if (!checkHBaseTableExists(hTableName)) {
