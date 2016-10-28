@@ -26,12 +26,11 @@ import org.apache.spark.sql.types._
  */
 private[hbase] class HadoopReader(
     @transient sc: SparkContext,
-    path: String,
-    delimiter: Option[String])(baseRelation: HBaseRelation) {
+    path: String)(baseRelation: HBaseRelation) {
   /** make RDD[(SparkImmutableBytesWritable, SparkKeyValue)] from text file. */
   private[hbase] def makeBulkLoadRDDFromTextFile = {
     val rdd = sc.textFile(path)
-    val splitRegex = delimiter.getOrElse(",")
+    val splitRegex = ","
     val relation = baseRelation
 
     rdd.mapPartitions { iter =>

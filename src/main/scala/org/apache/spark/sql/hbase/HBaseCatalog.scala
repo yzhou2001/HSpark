@@ -17,28 +17,42 @@
 package org.apache.spark.sql.hbase
 
 import java.io._
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip._
 
-import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.conf.{Configurable, Configuration}
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.client.coprocessor.Batch
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback
+import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat2, LoadIncrementalHFiles}
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase._
+import org.apache.hadoop.mapred.{JobConf, TaskID}
+import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskAttemptID, TaskType}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.util.StringUtils
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBaseCatalog._
+import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
+import org.apache.spark.sql.hbase.util.Util
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.util.SerializableConfiguration
+import org.apache.spark.{SparkEnv, SparkHadoopWriter, TaskContext}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.collection._
 import scala.collection.convert.decorateAsScala._
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Column represent the sql column
@@ -361,7 +375,163 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
                  loadPath: String,
                  isOverwrite: Boolean,
                  holdDDLTime: Boolean): Unit = {
-    throw new UnsupportedOperationException("loadTable is not implemented")
+    @transient val solvedRelation = lookupRelation(Seq(table))
+    @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
+      .child.asInstanceOf[LogicalRelation]
+      .relation.asInstanceOf[HBaseRelation]
+    @transient val hbContext = sqlContext
+
+    // tmp path for storing HFile
+    @transient val tmpPath = Util.getTempFilePath(
+      hbContext.sparkContext.hadoopConfiguration, relation.tableName)
+    @transient val job = Job.getInstance(hbContext.sparkContext.hadoopConfiguration)
+    HFileOutputFormat2.configureIncrementalLoad(job, relation.htable,
+      relation.connection_.getRegionLocator(relation.hTableName))
+    job.getConfiguration.set("mapreduce.output.fileoutputformat.outputdir", tmpPath)
+
+    @transient val conf = job.getConfiguration
+
+//    @transient val hadoopReader = if (isLocal) {
+//      val fs = FileSystem.getLocal(conf)
+//      val pathString = fs.pathToFile(new Path(inputPath)).toURI.toURL.toString
+//      new HadoopReader(sqlContext.sparkContext, pathString, delimiter)(relation)
+//    } else {
+//      new HadoopReader(sparkSession.sparkContext, inputPath, delimiter)(relation)
+//    }
+    @transient val hadoopReader = {
+      val fs = FileSystem.getLocal(conf)
+      val pathString = fs.pathToFile(new Path(loadPath)).toURI.toURL.toString
+      new HadoopReader(sqlContext.sparkContext, pathString)(relation)
+    }
+
+    @transient val splitKeys = relation.getRegionStartKeys.toArray
+    @transient val wrappedConf = new SerializableConfiguration(job.getConfiguration)
+
+    @transient val rdd = hadoopReader.makeBulkLoadRDDFromTextFile
+    @transient val partitioner = new HBasePartitioner(splitKeys)
+    @transient val ordering = Ordering[HBaseRawType]
+    @transient val shuffled =
+      new HBaseShuffledRDD(rdd, partitioner, relation.partitions).setKeyOrdering(ordering)
+
+    @transient val formatter = new SimpleDateFormat("yyyyMMddHHmm")
+    @transient val jobtrackerID = formatter.format(new Date())
+    @transient val stageId = shuffled.id
+    @transient val jobFormat = new HFileOutputFormat2
+
+    if (SparkEnv.get.conf.getBoolean("spark.hadoop.validateOutputSpecs", defaultValue = true)) {
+      // FileOutputFormat ignores the filesystem parameter
+      jobFormat.checkOutputSpecs(job)
+    }
+
+    @transient val par = true
+    @transient val writeShard =
+      (context: TaskContext, iter: Iterator[(HBaseRawType, Array[HBaseRawType])]) => {
+        val config = wrappedConf.value
+        /* "reduce task" <split #> <attempt # = spark task #> */
+
+        val attemptId = (context.taskAttemptId % Int.MaxValue).toInt
+        val jID = SparkHadoopWriter.createJobID(new Date(), context.stageId)
+        val taID = new TaskAttemptID(
+          new TaskID(jID, TaskType.MAP, context.partitionId), attemptId)
+
+        val hadoopContext = new TaskAttemptContextImpl(
+          job.getConfiguration.asInstanceOf[JobConf], taID)
+
+        val format = new HFileOutputFormat2
+        format match {
+          case c: Configurable => c.setConf(config)
+          case _ => ()
+        }
+        val committer = format.getOutputCommitter(hadoopContext).asInstanceOf[FileOutputCommitter]
+        committer.setupTask(hadoopContext)
+
+        val writer = format.getRecordWriter(hadoopContext).
+          asInstanceOf[RecordWriter[ImmutableBytesWritable, KeyValue]]
+        val bytesWritable = new ImmutableBytesWritable
+        var recordsWritten = 0L
+        var kv: (HBaseRawType, Array[HBaseRawType]) = null
+        var prevK: HBaseRawType = null
+        val columnFamilyNames =
+          relation.htable.getTableDescriptor.getColumnFamilies.map(
+            f => {f.getName})
+        var isEmptyRow = true
+
+        try {
+          while (iter.hasNext) {
+            kv = iter.next()
+
+            if (prevK != null && Bytes.compareTo(kv._1, prevK) == 0) {
+              // force flush because we cannot guarantee intra-row ordering
+              logInfo(s"flushing HFile writer " + writer)
+              // look at the type so we can print the name of the flushed file
+              writer.write(null, null)
+            }
+
+            isEmptyRow = true
+            for (i <- kv._2.indices) {
+              if (kv._2(i).nonEmpty) {
+                isEmptyRow = false
+                val nkc = relation.nonKeyColumns(i)
+                bytesWritable.set(kv._1)
+                writer.write(bytesWritable, new KeyValue(kv._1, nkc.familyRaw,
+                  nkc.qualifierRaw, kv._2(i)))
+              }
+            }
+
+            if(isEmptyRow) {
+              bytesWritable.set(kv._1)
+              writer.write(bytesWritable,
+                new KeyValue(
+                  kv._1,
+                  columnFamilyNames(0),
+                  HConstants.EMPTY_BYTE_ARRAY,
+                  HConstants.EMPTY_BYTE_ARRAY))
+            }
+
+            recordsWritten += 1
+
+            prevK = kv._1
+          }
+        } finally {
+          writer.close(hadoopContext)
+        }
+
+        committer.commitTask(hadoopContext)
+        logInfo(s"commit HFiles in $tmpPath")
+
+        val targetPath = committer.getCommittedTaskPath(hadoopContext)
+        if (par) {
+          val load = new LoadIncrementalHFiles(config)
+          // there maybe no target path
+          logInfo(s"written $recordsWritten records")
+          if (recordsWritten > 0) {
+            load.doBulkLoad(targetPath, relation.connection_.getAdmin, relation.htable,
+              relation.connection_.getRegionLocator(relation.hTableName))
+            relation.close()
+          }
+        }
+        1
+      }: Int
+
+    @transient val jobAttemptId =
+      new TaskAttemptID(jobtrackerID, stageId, true, 0, 0)
+    @transient val jobTaskContext = new TaskAttemptContextImpl(wrappedConf.value, jobAttemptId)
+    @transient val jobCommitter = jobFormat.getOutputCommitter(jobTaskContext)
+    jobCommitter.setupJob(jobTaskContext)
+    logDebug(s"Starting doBulkLoad on table ${relation.htable.getName} ...")
+    sqlContext.sparkContext.runJob(shuffled, writeShard)
+    logDebug(s"finished BulkLoad : ${System.currentTimeMillis()}")
+    jobCommitter.commitJob(jobTaskContext)
+//    if (!parallel) {
+//      val tablePath = new Path(tmpPath)
+//      val load = new LoadIncrementalHFiles(conf)
+//      load.doBulkLoad(tablePath, relation.connection_.getAdmin, relation.htable,
+//        relation.connection_.getRegionLocator(relation.hTableName))
+//    }
+    relation.close()
+    logDebug(s"finish BulkLoad on table ${relation.htable.getName}:" +
+      s" ${System.currentTimeMillis()}")
+    Seq.empty[Row]
   }
 
   override def loadPartition(

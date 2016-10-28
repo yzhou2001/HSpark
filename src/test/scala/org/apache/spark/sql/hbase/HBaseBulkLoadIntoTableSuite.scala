@@ -21,7 +21,7 @@ import org.apache.hadoop.hbase.TableName
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlParser
-import org.apache.spark.sql.hbase.execution._
+import org.apache.spark.sql.execution.command.LoadDataCommand
 import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._
 
@@ -40,12 +40,12 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
 
-    assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
+    assert(plan.isInstanceOf[LoadDataCommand])
 
-    val l = plan.asInstanceOf[BulkLoadIntoTableCommand]
-    assert(l.inputPath.equals(raw"./usr/file.txt"))
+    val l = plan.asInstanceOf[LoadDataCommand]
+    assert(l.path.equals(raw"./usr/file.txt"))
     assert(l.isLocal)
-    assert(l.tableName.equals("tb1"))
+    assert(l.table.table.equals("tb1"))
   }
 
   // Test if we can parse 'LOAD DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1'
@@ -56,12 +56,12 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
-    assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
+    assert(plan.isInstanceOf[LoadDataCommand])
 
-    val l = plan.asInstanceOf[BulkLoadIntoTableCommand]
-    assert(l.inputPath.equals(raw"/usr/hdfsfile.txt"))
+    val l = plan.asInstanceOf[LoadDataCommand]
+    assert(l.path.equals(raw"/usr/hdfsfile.txt"))
     assert(!l.isLocal)
-    assert(l.tableName.equals("tb1"))
+    assert(l.table.table.equals("tb1"))
   }
 
   test("bulkload parser test, using delimiter") {
@@ -71,13 +71,12 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
-    assert(plan.isInstanceOf[BulkLoadIntoTableCommand])
+    assert(plan.isInstanceOf[LoadDataCommand])
 
-    val l = plan.asInstanceOf[BulkLoadIntoTableCommand]
-    assert(l.inputPath.equals(raw"/usr/hdfsfile.txt"))
+    val l = plan.asInstanceOf[LoadDataCommand]
+    assert(l.path.equals(raw"/usr/hdfsfile.txt"))
     assert(!l.isLocal)
-    assert(l.tableName.equals("tb1"))
-    assert(l.delimiter.get.equals(raw"\\|"))
+    assert(l.table.table.equals("tb1"))
   }
 
   test("load data into hbase") {
