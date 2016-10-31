@@ -37,6 +37,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskAttemptID, TaskType}
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
@@ -346,11 +347,20 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   }
 
   override def getTable(db: String, table: String): CatalogTable = {
-    throw new UnsupportedOperationException("getTable is not implemented")
+    val relation = getTable(table)
+    if (relation.isDefined) {
+      val identifier = TableIdentifier(relation.get.tableName)
+      val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
+        CatalogStorageFormat.empty, Seq.empty)
+      catalogTable
+    } else {
+      null
+    }
   }
 
   override def getTableOption(db: String, table: String): Option[CatalogTable] = {
-    throw new UnsupportedOperationException("getTableOption is not implemented")
+    val catalogTable = getTable(db, table)
+    Some(catalogTable)
   }
 
   override def tableExists(db: String, table: String): Boolean = {
