@@ -52,7 +52,7 @@ case class AlterAddColCommand(
     val hbaseCatalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
     hbaseCatalog.alterTableAddNonKey(tableName,
       NonKeyColumn(
-        colName, hbaseCatalog.getDataType(colType), colFamily, colQualifier)
+        colName, DataTypeUtils.getDataType(colType), colFamily, colQualifier)
     )
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]

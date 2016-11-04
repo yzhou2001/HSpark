@@ -68,13 +68,13 @@ class HBaseSource extends RelationProvider {
         if (keyMap.contains(name)) {
           KeyColumn(
             name,
-            catalog.getDataType(keyMap(name)),
+            DataTypeUtils.getDataType(keyMap(name)),
             keyCols.indexWhere(_._1 == name))
         } else {
           val nonKeyCol = nonKeyCols.find(_._1 == name).get
           NonKeyColumn(
             name,
-            catalog.getDataType(nonKeyCol._2),
+            DataTypeUtils.getDataType(nonKeyCol._2),
             nonKeyCol._3,
             nonKeyCol._4
           )
@@ -225,8 +225,8 @@ private[hbase] case class HBaseRelation(
   /**
    * partitions are updated per table lookup to keep the info reasonably updated
    */
-  @transient lazy val partitionExpiration =
-    context.conf.asInstanceOf[HBaseSQLConf].partitionExpiration * 1000
+  @transient lazy val partitionExpiration = context.conf.asInstanceOf[HBaseSQLConf].partitionExpiration * 1000
+
   @transient var partitionTS: Long = _
 
   private[hbase] def fetchPartitions(): Unit = {

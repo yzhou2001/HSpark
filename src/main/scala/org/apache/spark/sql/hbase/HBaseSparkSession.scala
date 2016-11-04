@@ -21,11 +21,13 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
-import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, SparkSqlParser}
-import org.apache.spark.sql.hbase.execution.HBaseStrategies
+import org.apache.spark.sql.execution.datasources.{DataSourceAnalysis, FindDataSourceTable, PreprocessTableInsertion, ResolveDataSource}
+import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, SparkSqlParser, datasources}
+import org.apache.spark.sql.hbase.execution.{HBaseSourceAnalysis, HBaseStrategies}
 import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
 import org.apache.spark.sql.execution.exchange.EnsureRequirements
 
@@ -58,6 +60,19 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
 
 class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
   override lazy val conf: SQLConf = new HBaseSQLConf
+
+  override lazy val analyzer: Analyzer = {
+    new Analyzer(catalog, conf) {
+      override val extendedResolutionRules =
+        PreprocessTableInsertion(conf) ::
+          new FindDataSourceTable(sparkSession) ::
+          DataSourceAnalysis(conf) ::
+          HBaseSourceAnalysis(conf, sparkSession) ::
+          (if (conf.runSQLonFile) new ResolveDataSource(sparkSession) :: Nil else Nil)
+
+      override val extendedCheckRules = Seq(datasources.PreWriteCheck(conf, catalog))
+    }
+  }
 }
 
 class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {

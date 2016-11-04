@@ -17,19 +17,18 @@
 
 package org.apache.spark.sql.hbase.execution
 
-import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.datasources.{DataSourceStrategy, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
-import org.apache.spark.sql.hbase.{HBasePartition, HBaseRawType, HBaseRelation, KeyColumn}
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{SQLContext, Strategy, execution}
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.hbase.{HBaseCatalog, HBaseRelation, KeyColumn, NonKeyColumn}
+import org.apache.spark.sql.catalyst.{CatalystConf, InternalRow}
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.catalyst.catalog.SimpleCatalogRelation
+import org.apache.spark.sql.hbase.util.DataTypeUtils
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
@@ -227,3 +226,65 @@ private[hbase] trait HBaseStrategies {
   }
 
 }
+
+private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: SparkSession)
+  extends Rule[LogicalPlan] {
+  override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
+    case s: SimpleCatalogRelation =>
+      val properties = s.metadata.properties
+      if (properties.contains("provider") && properties("provider") == "hbase") {
+        val db = properties("db")
+        val table = properties("table")
+        val relation = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table)
+        if (relation.isDefined) {
+          LogicalRelation(relation.get)
+        } else {
+          s
+        }
+      } else {
+        s
+      }
+    }
+  }
+//      val tableName = properties("tableName")
+//      val namespace = if (properties.contains("namespace")) properties("namespace") else null
+//      val hbaseTableName = properties("hbaseTableName")
+//      val allColumns = properties("allColumns").split(";").map {
+//        case key if key.startsWith("true") =>
+//          //isKeyColumn,ordinal,sqlName,dataTypeName,order
+//          val keys = key.split(",")
+//          val ordinal = keys(1).toInt
+//          val sqlName = keys(2)
+//          val dataType = DataTypeUtils.getDataType(keys(3))
+//          val order = keys(4).toInt
+//          val keyColumn = KeyColumn(sqlName, dataType, order)
+//          keyColumn.ordinal = ordinal
+//          keyColumn
+//        case nonkey =>
+//          //isKeyColumn,ordinal,sqlName,dataTypeName,family,qualifier
+//          val keys = nonkey.split(",")
+//          val ordinal = keys(1).toInt
+//          val sqlName = keys(2)
+//          val dataType = DataTypeUtils.getDataType(keys(3))
+//          val family = keys(4)
+//          val qualifier = keys(5)
+//          val nonKeyColumn = NonKeyColumn(sqlName, dataType, family, qualifier)
+//          nonKeyColumn.ordinal = ordinal
+//          nonKeyColumn
+//      }.toSeq
+//      val deploySuccessfully = {
+//        if (properties.contains("deploySuccessfully")) {
+//          Some(properties("deploySuccessfully").toBoolean)
+//        } else {
+//          None
+//        }
+//      }
+//      val hasCoprocessor = properties("hasCoprocessor").toBoolean
+//      val encodingFormat = properties("encodingFormat")
+//      val relation = new HBaseRelation(tableName, namespace, hbaseTableName,
+//        allColumns, deploySuccessfully, hasCoprocessor, encodingFormat,
+//        session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].connection)(session.sqlContext)
+//      LogicalRelation(relation)
+//    }
+//  }
+//}

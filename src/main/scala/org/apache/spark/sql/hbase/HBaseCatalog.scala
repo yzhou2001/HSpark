@@ -45,7 +45,7 @@ import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
-import org.apache.spark.sql.hbase.util.Util
+import org.apache.spark.sql.hbase.util.{DataTypeUtils, Util}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.util.SerializableConfiguration
@@ -68,13 +68,15 @@ sealed abstract class AbstractColumn extends Serializable {
   def isKeyColumn: Boolean
 
   override def toString: String = {
-    s"$sqlName , $dataType.typeName"
+    s"$isKeyColumn,$ordinal,$sqlName,${dataType.typeName}"
   }
 }
 
 case class KeyColumn(sqlName: String, dataType: DataType, order: Int)
   extends AbstractColumn {
   override def isKeyColumn: Boolean = true
+
+  override def toString = super.toString + s",$order"
 }
 
 case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qualifier: String)
@@ -84,13 +86,11 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
 
   override def isKeyColumn: Boolean = false
 
-  override def toString = {
-    s"$sqlName , $dataType.typeName , $family:$qualifier"
-  }
+  override def toString = super.toString + s",$family,$qualifier"
 }
 
-private[hbase] class HBaseCatalog(sqlContext: SQLContext,
-                                  configuration: Configuration)
+private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
+                                  @transient configuration: Configuration)
   extends ExternalCatalog with Logging with Serializable {
 
   @transient
@@ -267,13 +267,13 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
         if (keyMap.contains(name)) {
           KeyColumn(
             name,
-            getDataType(keyMap(name)),
+            DataTypeUtils.getDataType(keyMap(name)),
             keyCols.indexWhere(_._1 == name))
         } else {
           val nonKeyCol = nonKeyCols.find(_._1 == name).get
           NonKeyColumn(
             name,
-            getDataType(nonKeyCol._2),
+            DataTypeUtils.getDataType(nonKeyCol._2),
             nonKeyCol._3,
             nonKeyCol._4
           )
@@ -347,15 +347,40 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   }
 
   override def getTable(db: String, table: String): CatalogTable = {
-    val relation = getTable(table)
-    if (relation.isDefined) {
-      val identifier = TableIdentifier(relation.get.tableName)
+    if (tableExists(db, table)) {
+      val identifier = TableIdentifier(table, Some(db))
       val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
-        CatalogStorageFormat.empty, Seq.empty)
+        CatalogStorageFormat.empty, Seq.empty,
+        properties = immutable.Map("provider" -> "hbase", "db" -> db, "table" -> table))
       catalogTable
     } else {
       null
     }
+
+//    val relation = getTable(table)
+//    if (relation.isDefined) {
+//      val identifier = TableIdentifier(relation.get.tableName, Some(db))
+//
+//      // pass in the hbase information
+//      var hbaseProperties = collection.immutable.Map[String, String]()
+//      hbaseProperties += ("tableName" -> relation.get.tableName)
+//      if (relation.get.hbaseNamespace != null) {
+//        hbaseProperties += ("namespace" -> relation.get.hbaseNamespace)
+//      }
+//      hbaseProperties += ("hbaseTableName" -> relation.get.hbaseTableName)
+//      hbaseProperties += ("allColumns" -> relation.get.allColumns.map(_.toString).mkString(";"))
+//      if (relation.get.deploySuccessfully.isDefined) {
+//        hbaseProperties += ("deploySuccessfully" -> relation.get.deploySuccessfully.get.toString)
+//      }
+//      hbaseProperties += ("hasCoprocessor" -> relation.get.hasCoprocessor.toString)
+//      hbaseProperties += ("encodingFormat" -> relation.get.encodingFormat)
+//
+//      val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
+//        CatalogStorageFormat.empty, Seq.empty, properties = hbaseProperties)
+//      catalogTable
+//    } else {
+//      null
+//    }
   }
 
   override def getTableOption(db: String, table: String): Option[CatalogTable] = {
@@ -394,7 +419,8 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
     // tmp path for storing HFile
     @transient val tmpPath = Util.getTempFilePath(
       hbContext.sparkContext.hadoopConfiguration, relation.tableName)
-    @transient val job = Job.getInstance(hbContext.sparkContext.hadoopConfiguration)
+    @transient val job = new Job(new JobConf(hbContext.sparkContext.hadoopConfiguration))
+
     HFileOutputFormat2.configureIncrementalLoad(job, relation.htable,
       relation.connection_.getRegionLocator(relation.hTableName))
     job.getConfiguration.set("mapreduce.output.fileoutputformat.outputdir", tmpPath)
@@ -444,8 +470,7 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
         val taID = new TaskAttemptID(
           new TaskID(jID, TaskType.MAP, context.partitionId), attemptId)
 
-        val hadoopContext = new TaskAttemptContextImpl(
-          job.getConfiguration.asInstanceOf[JobConf], taID)
+        val hadoopContext = new TaskAttemptContextImpl(config, taID)
 
         val format = new HFileOutputFormat2
         format match {
@@ -529,6 +554,7 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
     @transient val jobCommitter = jobFormat.getOutputCommitter(jobTaskContext)
     jobCommitter.setupJob(jobTaskContext)
     logDebug(s"Starting doBulkLoad on table ${relation.htable.getName} ...")
+
     sqlContext.sparkContext.runJob(shuffled, writeShard)
     logDebug(s"finished BulkLoad : ${System.currentTimeMillis()}")
     jobCommitter.commitJob(jobTaskContext)
@@ -781,29 +807,6 @@ private[hbase] class HBaseCatalog(sqlContext: SQLContext,
   private[hbase] def checkFamilyExists(hbaseTableName: TableName, family: String): Boolean = {
     val tableDescriptor = admin.getTableDescriptor(hbaseTableName)
     tableDescriptor.hasFamily(Bytes.toBytes(family))
-  }
-
-  def getDataType(dataType: String): DataType = {
-    if (dataType.equalsIgnoreCase(StringType.typeName)) {
-      StringType
-    } else if (dataType.equalsIgnoreCase(ByteType.typeName)) {
-      ByteType
-    } else if (dataType.equalsIgnoreCase(ShortType.typeName)) {
-      ShortType
-    } else if (dataType.equalsIgnoreCase(IntegerType.typeName) ||
-      dataType.equalsIgnoreCase("int")) {
-      IntegerType
-    } else if (dataType.equalsIgnoreCase(LongType.typeName)) {
-      LongType
-    } else if (dataType.equalsIgnoreCase(FloatType.typeName)) {
-      FloatType
-    } else if (dataType.equalsIgnoreCase(DoubleType.typeName)) {
-      DoubleType
-    } else if (dataType.equalsIgnoreCase(BooleanType.typeName)) {
-      BooleanType
-    } else {
-      throw new IllegalArgumentException(s"Unrecognized data type: $dataType")
-    }
   }
 }
 
