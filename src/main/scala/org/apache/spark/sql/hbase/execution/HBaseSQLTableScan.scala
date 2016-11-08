@@ -44,5 +44,10 @@ case class HBaseSQLTableScan(
     RangePartitioning(ordering, relation.partitions.size)
   }
 
-  override protected def doExecute(): RDD[InternalRow] = result
+  override protected def doExecute(): RDD[InternalRow] = {
+    result.mapPartitionsInternal { iter =>
+      val proj = UnsafeProjection.create(relation.schema)
+      iter.map(proj)
+    }
+   }
 }
