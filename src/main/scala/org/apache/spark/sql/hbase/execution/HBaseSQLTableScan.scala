@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.plans.physical.RangePartitioning
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.types.StructType
 
 /**
  * :: DeveloperApi ::
@@ -45,8 +46,9 @@ case class HBaseSQLTableScan(
   }
 
   override protected def doExecute(): RDD[InternalRow] = {
+    val schema = StructType.fromAttributes(output)
     result.mapPartitionsInternal { iter =>
-      val proj = UnsafeProjection.create(relation.schema)
+      val proj = UnsafeProjection.create(schema)
       iter.map(proj)
     }
    }
