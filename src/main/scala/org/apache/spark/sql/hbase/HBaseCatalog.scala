@@ -35,7 +35,7 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.mapred.{JobConf, TaskID}
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.hadoop.mapreduce.{Job, RecordWriter, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce._
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
@@ -549,7 +549,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
       }: Int
 
     @transient val jobAttemptId =
-      new TaskAttemptID(jobtrackerID, stageId, true, 0, 0)
+      new TaskAttemptID(new TaskID(jobtrackerID, stageId, TaskType.MAP, 0), 0)
     @transient val jobTaskContext = new TaskAttemptContextImpl(wrappedConf.value, jobAttemptId)
     @transient val jobCommitter = jobFormat.getOutputCommitter(jobTaskContext)
     jobCommitter.setupJob(jobTaskContext)
