@@ -565,6 +565,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
 //        relation.connection_.getRegionLocator(relation.hTableName))
 //    }
     relation.close()
+    Util.dropTempFilePath(hbContext.sparkContext.hadoopConfiguration, tmpPath)
     logDebug(s"finish BulkLoad on table ${relation.htable.getName}:" +
       s" ${System.currentTimeMillis()}")
     Seq.empty[Row]

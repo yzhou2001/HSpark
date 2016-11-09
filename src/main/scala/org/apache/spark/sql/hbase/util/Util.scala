@@ -28,6 +28,12 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 object Util {
   val iteration = new AtomicInteger(0)
 
+  /**
+   * Generate a temp folder on hadoop file system.
+   * @param conf the hadoop configuration
+   * @param prefix the prefix for that folder name to be generated
+   * @return the folder name in string format
+   */
   def getTempFilePath(conf: Configuration, prefix: String): String = {
     val fileSystem = FileSystem.get(conf)
     val path = new Path(s"$prefix-${System.currentTimeMillis()}-${iteration.getAndIncrement}")
@@ -35,6 +41,23 @@ object Util {
       fileSystem.delete(path, true)
     }
     path.getName
+  }
+
+  /**
+   * Drop the temp folder, return true if it exists and is dropped successfully,
+   * otherwise return false
+   * @param conf the hadoop configuration
+   * @param path the path to be dropped
+   * @return true if the folder path exists ad is dropped successfully, otherwise return false
+   */
+  def dropTempFilePath(conf: Configuration, path: String): Boolean = {
+    val fileSystem = FileSystem.get(conf)
+    val filePath = new Path(path)
+    if (fileSystem.exists(filePath)) {
+      fileSystem.delete(filePath, true)
+    } else {
+      false
+    }
   }
 
   def serializeHBaseConfiguration(configuration: Configuration): Array[Byte] = {
