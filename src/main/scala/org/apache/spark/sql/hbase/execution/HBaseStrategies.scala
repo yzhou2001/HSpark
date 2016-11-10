@@ -237,7 +237,7 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
         val table = properties("table")
         val relation = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table)
         if (relation.isDefined) {
-          LogicalRelation(relation.get)
+          relation.get.logicalRelation
         } else {
           s
         }
