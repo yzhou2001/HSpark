@@ -244,11 +244,11 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
   @transient var pwdIsAccessible = false
 
   override def createTable(db: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
-    val tableName = tableDefinition.properties.getOrElse("tableName", null)
+    val tableName = tableDefinition.identifier.table
     if (tableName == null) {
       throw new Exception(s"Logical table name is not defined")
     }
-    val hbaseNamespace = tableDefinition.properties.getOrElse("namespace", null)
+    val hbaseNamespace = tableDefinition.identifier.database.orNull
     val hbaseTableName = tableDefinition.properties.getOrElse("hbaseTableName", null)
     if (hbaseTableName == null) {
       throw new Exception(s"HBase table name is not defined")
