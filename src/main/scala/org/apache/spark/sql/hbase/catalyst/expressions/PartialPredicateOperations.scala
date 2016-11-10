@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hbase.types.RangeType._
 import org.apache.spark.sql.hbase.types._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 
 object PartialPredicateOperations {
@@ -173,11 +172,8 @@ object PartialPredicateOperations {
               (null, InSet(evaluatedValue._2, newHset))
             }
           }
-        case l: LeafExpression =>
-          val res = l.eval(input)
-          (res, l)
         case b: BoundReference =>
-          val res = b.eval(input)
+          val res = input.get(b.ordinal, null)
           (res, schema(b.ordinal))
         case n: NamedExpression =>
           val res = n.eval(input)
@@ -306,6 +302,9 @@ object PartialPredicateOperations {
           } else {
             falseE.partialReduce(input, schema)
           }
+        case l: LeafExpression =>
+          val res = l.eval(input)
+          (res, l)
         case _ => (null, unboundAttributeReference(e, schema))
       }
     }
@@ -332,4 +331,8 @@ object PartialPredicateOperations {
       }
     }
   }
+}
+
+class HBaseInternalRow extends GenericInternalRow {
+
 }
