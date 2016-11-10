@@ -36,7 +36,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
     }.foldLeft(true) { case (res1, newres) => res1 && newres}
     assert(res, "One or more rows did not match expected")
 
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     logInfo(result1.mkString)
 
     val sql2 =
@@ -44,7 +44,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
         .stripMargin
 
     val results = runSql(sql2)
-    logInfo(s"$sql2 came back with $results.length results")
+    logInfo(s"$sql2 came back with ${results.length} results")
     assert(results.length == 2, s"$testnm failed assertion on size")
     res = {
       for (rx <- 0 until 2)
@@ -63,7 +63,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
         .stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 2, s"$testnm failed on size")
     val exparr = Array(
       Array("Row2", 'b', 12342, 23456782, 3456789012342L, 45657.82F, 5678912.345682),
@@ -109,7 +109,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
         .stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 1, s"$testnm failed on size")
     val exparr = Array(
       Array(5678912.345682, 5678912.345682))
@@ -136,7 +136,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
         .stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 1, s"$testnm failed on size")
     val exparr = Array(
       Array(5678912.345682, -5678912.345682, "ow2", 5678912.345682,
@@ -169,7 +169,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
        AND (intcol < 0 OR intcol IS NOT NULL)""".stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 2, s"$testnm failed on size")
     val exparr = Array(
       Array(5678912.345682, -5678912.345682, "ow2", 5678912.345682,
@@ -195,7 +195,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
      WHERE doublecol IN (doublecol + 5678912.345682 - doublecol, doublecol + 5678912.345683 - doublecol)""".stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 2, s"$testnm failed on size")
     val exparr = Array(
       Array(5678912.345682, -5678912.345682, "ow2", 5678912.345682,
@@ -221,7 +221,7 @@ class HBaseBasicQueriesSuite extends TestBaseWithNonSplitData {
      WHERE doublecol IN (5678912.345682, 5678912.345683)""".stripMargin
 
     val result1 = runSql(query1)
-    logInfo(s"$query1 came back with $result1.length results")
+    logInfo(s"$query1 came back with ${result1.length} results")
     assert(result1.length == 2, s"$testnm failed on size")
     val exparr = Array(
       Array(5678912.345682, -5678912.345682, "ow2", 5678912.345682,

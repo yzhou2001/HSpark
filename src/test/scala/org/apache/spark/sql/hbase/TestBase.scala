@@ -171,7 +171,7 @@ abstract class TestBase
 
   def loadData(tableName: String, loadFile: String) = {
     // then load data into table
-    val loadSql = s"LOAD PARALL DATA LOCAL INPATH '$loadFile' INTO TABLE $tableName"
+    val loadSql = s"LOAD DATA LOCAL INPATH '$loadFile' INTO TABLE $tableName"
     runSql(loadSql)
   }
 }
