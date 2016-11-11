@@ -39,11 +39,11 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("Insert Into table in StringFormat") {
-    sql( """CREATE TABLE tb0 (column2 INTEGER, column1 INTEGER, column4 FLOAT,
-          column3 SHORT, PRIMARY KEY(column1))
-          MAPPED BY (default.ht0, COLS=[column2=family0.qualifier0, column3=family1.qualifier1,
-          column4=family2.qualifier2]) IN StringFormat"""
-    )
+    sql( """CREATE TABLE tb0 TBLPROPERTIES(
+        'hbaseTableName'='default.ht0',
+        'colsSeq'='column2,column1,column4,column3',
+        'keyCols'='column1,INTEGER',
+        'nonKeyCols'='column2,INTEGER,family0,qualifier0;column3,ShORT,family1,qualifier1;column4,FLOAT,family2,qualifier2')""")
 
     assert(sql( """SELECT * FROM tb0""").collect().length == 0)
     sql( """INSERT INTO TABLE tb0 SELECT col4,col4,col6,col3 FROM ta""")
@@ -53,7 +53,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
     sql( """SELECT * FROM tb0 where column2 > 200""").show
 
     sql( """DROP TABLE tb0""")
-    dropNativeHbaseTable("ht0")
+    dropNativeHbaseTable("default.ht0")
   }
 
   test("Insert and Query Single Row") {

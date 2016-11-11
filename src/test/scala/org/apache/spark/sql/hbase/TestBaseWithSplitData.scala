@@ -90,7 +90,7 @@ class TestBaseWithSplitData extends TestBase {
         TableName_a, null, HbaseTableName.getNameAsString, allColumns, splitKeys)
 
       runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
-                  'hbaseTableName' = '$HbaseTableName',
+                  'hbaseTableName'='$HbaseTableName',
                   'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
                   'keyCols'='col7,INT;col1,STRING;col3,SHORT',
                   'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
