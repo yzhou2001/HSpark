@@ -44,12 +44,12 @@ class HBaseAdditionalQuerySuite extends TestBase {
     }
 
     val splitKeys: Array[HBaseRawType] = Array(
-      generateRowKey(Array(1024, UTF8String.fromString("0b"), 0), 3),
-      generateRowKey(Array(2048, UTF8String.fromString("cc"), 1024), 4),
-      generateRowKey(Array(4096, UTF8String.fromString("0a"), 0), 4),
-      generateRowKey(Array(4096, UTF8String.fromString("0b"), 1024), 7),
-      generateRowKey(Array(4096, UTF8String.fromString("cc"), 0), 7),
-      generateRowKey(Array(4096, UTF8String.fromString("cc"), 1000))
+      generateRowKey(Array(1024, "0b", 0), 3),
+      generateRowKey(Array(2048, "cc", 1024), 4),
+      generateRowKey(Array(4096, "0a", 0), 4),
+      generateRowKey(Array(4096, "0b", 1024), 7),
+      generateRowKey(Array(4096, "cc", 0), 7),
+      generateRowKey(Array(4096, "cc", 1000))
     )
     if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists("", "presplit_table"))
     {
@@ -59,46 +59,45 @@ class HBaseAdditionalQuerySuite extends TestBase {
       TableName.valueOf("presplit_table"), Set("cf"), splitKeys, useCoprocessor)
 
     val sql =
-      s"""CREATE TABLE testblk(col1 INT, col2 STRING, col3 INT, col4 STRING,
-          PRIMARY KEY(col1, col2, col3))
-          MAPPED BY (presplit_table, COLS=[col4=cf.a])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES('hbaseTableName'='presplit_table',
+           'colsSeq'='col1,col2,col3,col4',
+           'keyCols'='col1,INT;col2,STRING;col3,INT',
+           'nonKeyCols'='col4,STRING,cf,a')"""
         .stripMargin
     runSql(sql)
 
     val inputFile = "'" + hbaseHome + "/splitLoadData1.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
     runSql(loadSql)
   }
 
   def createTableTeacher(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_teacher_3key(
-          grade INT, class INT, subject STRING, teacher_name STRING, teacher_age INT,
-          PRIMARY KEY(grade, class, subject))
-          MAPPED BY (teacher, COLS=[teacher_name=cf.a, teacher_age=cf.b])"""
+      s"""CREATE TABLE spark_teacher_3key TBLPROPERTIES('hbaseTableName'='teacher',
+           'colsSeq'='grade,class,subject,teacher_name,teacher_age',
+           'keyCols'='grade,INT;class,INT;subject,STRING',
+           'nonKeyCols'='teacher_name,STRING,cf,a;teacher_age,INT,cf,b')"""
         .stripMargin
     runSql(sql)
 
     val inputFile = "'" + hbaseHome + "/teacher.txt'"
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE spark_teacher_3key"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE spark_teacher_3key"
     runSql(loadSql)
   }
 
   def createTablePeople(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_people(
-          rowNum INT, people_name STRING, people_age INT,
-          school_identification STRING, school_director STRING,
-          PRIMARY KEY(rowNum))
-          MAPPED BY (people, COLS=[people_name=cf.a, people_age=cf.b,
-          school_identification=cf.c, school_director=cf.d])"""
+      s"""CREATE TABLE spark_people TBLPROPERTIES('hbaseTableName'='people',
+           'colsSeq'='rowNum,people_name,people_age,school_identification,school_director',
+           'keyCols'='rowNum,INT',
+           'nonKeyCols'='people_name,STRING,cf,a;people_age,INT,cf,b;school_identification,STRING,cf,c;school_director,STRING,cf,d')"""
         .stripMargin
     runSql(sql)
 
     val inputFile = "'" + hbaseHome + "/people.txt'"
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE spark_people"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE spark_people"
     runSql(loadSql)
   }
 
@@ -281,9 +280,9 @@ class HBaseAdditionalQuerySuite extends TestBase {
     sql = "select col1 from testblk where col1 < 4096 group by col1"
     checkResult(TestHbase.sql(sql), containExchange = false, 3)
 
-    val result = runSql("select avg(col3) from testblk where col1 < 4096 group by col1")
+    val result = runSql("select avg(col3) from testblk where col1 < 4096 group by col1 order by avg(col3)")
     assert(result.length == 3)
-    val exparr = Array(Array(1024.0), Array(0.0), Array(1024.0))
+    val exparr = Array(Array(0.0), Array(1024.0), Array(1024.0))
 
     val res = {
       for (rx <- exparr.indices)
