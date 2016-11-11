@@ -132,7 +132,7 @@ object PartialPredicateOperations {
             for (item <- evaluatedList if !foundInList) {
               if (item._1 == null) {
                 newList = newList :+ item._2
-              } else if (item._2 == null) {
+              } else if (item._2 != null) {
                 val cmp = prc2(value.dataType, item._2.dataType, evaluatedValue, item._1)
                 if (cmp.isDefined && cmp.get == 0) {
                   foundInList = true
