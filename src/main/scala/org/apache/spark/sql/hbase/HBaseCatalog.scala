@@ -243,6 +243,54 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
   // For details, please read the comment in CheckDirEndPointImpl.
   @transient var pwdIsAccessible = false
 
+  def createTable(tableName: String, hbaseNamespace: String, hbaseTableName: String,
+                  allColumns: Seq[AbstractColumn], splitKeys: Array[Array[Byte]],
+                  encodingFormat: String = "binaryformat"): HBaseRelation = {
+    try {
+      val metadataTable = getMetadataTable
+
+      if (checkLogicalTableExist(tableName, metadataTable)) {
+        throw new Exception(s"The logical table: $tableName already exists")
+      }
+      // create a new hbase table for the user if not exist
+      val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn])
+        .asInstanceOf[Seq[NonKeyColumn]]
+      val families = nonKeyColumns.map(_.family).toSet
+      val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
+      if (!checkHBaseTableExists(hTableName)) {
+        createHBaseUserTable(hTableName, families, splitKeys,
+          sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
+      } else {
+        families.foreach {
+          case family =>
+            if (!checkFamilyExists(hTableName, family)) {
+              throw new Exception(s"HBase table does not contain column family: $family")
+            }
+        }
+      }
+
+      val get = new Get(Bytes.toBytes(tableName))
+      val result = if (metadataTable.exists(get)) {
+        throw new Exception(s"row key $tableName exists")
+      } else {
+        val hbaseRelation = HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
+          allColumns, deploySuccessfully,
+          hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
+          encodingFormat, connection)(sqlContext)
+        hbaseRelation.setConfig(configuration)
+
+        writeObjectToTable(hbaseRelation, metadataTable)
+
+        relationMapCache.put(processTableName(tableName), hbaseRelation)
+        hbaseRelation
+      }
+      metadataTable.close()
+      result
+    } finally {
+      stopAdmin()
+    }
+  }
+
   override def createTable(db: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
     val tableName = tableDefinition.identifier.table
     if (tableName == null) {
@@ -280,46 +328,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
         }
     }.toSeq
 
-    try {
-      val metadataTable = getMetadataTable
-
-      if (checkLogicalTableExist(tableName, metadataTable)) {
-        throw new Exception(s"The logical table: $tableName already exists")
-      }
-      // create a new hbase table for the user if not exist
-      val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn]).asInstanceOf[Seq[NonKeyColumn]]
-      val families = nonKeyColumns.map(_.family).toSet
-      val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
-      if (!checkHBaseTableExists(hTableName)) {
-        createHBaseUserTable(hTableName, families, null,
-          sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
-      } else {
-        families.foreach {
-          family =>
-            if (!checkFamilyExists(hTableName, family)) {
-              throw new Exception(s"HBase table does not contain column family: $family")
-            }
-        }
-      }
-
-      val get = new Get(Bytes.toBytes(tableName))
-      if (metadataTable.exists(get)) {
-        throw new Exception(s"row key $tableName exists")
-      } else {
-        val hbaseRelation = HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
-          allColumns, deploySuccessfully,
-          hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
-          encodingFormat, connection)(sqlContext)
-        hbaseRelation.setConfig(configuration)
-
-        writeObjectToTable(hbaseRelation, metadataTable)
-
-        relationMapCache.put(processTableName(tableName), hbaseRelation)
-      }
-      metadataTable.close()
-    } finally {
-      stopAdmin()
-    }
+    createTable(tableName, hbaseNamespace, hbaseTableName, allColumns, null, encodingFormat)
   }
 
   override def dropTable(db: String, table: String, ignoreIfNotExists: Boolean): Unit = {

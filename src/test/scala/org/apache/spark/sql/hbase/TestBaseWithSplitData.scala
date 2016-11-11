@@ -25,7 +25,7 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
 import org.apache.spark.sql.types._
-import  org.apache.spark.sql.Row
+import org.apache.spark.sql.Row
 
 /**
  * HBaseMainTest
@@ -86,13 +86,14 @@ class TestBaseWithSplitData extends TestBase {
         null
       }
 
-//      TestHbase.sharedState.externalCatalog.createTable(TableName_a, null,
-//        HbaseTableName.getNameAsString, allColumns, splitKeys)
+      TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createTable(
+        TableName_a, null, HbaseTableName.getNameAsString, allColumns, splitKeys)
 
-      runSql( s"""CREATE TABLE $TableName_b(col1 STRING, col2 BYTE, col3 SHORT, col4 INTEGER,
-          col5 LONG, col6 FLOAT, col7 INTEGER, PRIMARY KEY(col7, col1, col3))
-          MAPPED BY ($HbaseTableName, COLS=[col2=cf1.cq11, col4=cf1.cq12, col5=cf2.cq21,
-          col6=cf2.cq22])""".stripMargin)
+      runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
+                  'hbaseTableName' = '$HbaseTableName',
+                  'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
+                  'keyCols'='col7,INT;col1,STRING;col3,SHORT',
+                  'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
 
       if (!TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
         throw new IllegalArgumentException("where is our table?")
