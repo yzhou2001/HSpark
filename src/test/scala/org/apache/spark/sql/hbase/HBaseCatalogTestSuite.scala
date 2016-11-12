@@ -17,12 +17,13 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase._
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.util.HBaseKVHelper
 import org.apache.spark.sql.types._
+
+import scala.collection.Seq
 
 class HBaseCatalogTestSuite extends TestBase {
   val (catalog, configuration) = (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog],
@@ -38,7 +39,7 @@ class HBaseCatalogTestSuite extends TestBase {
 
     if (!catalog.checkHBaseTableExists(TableName.valueOf(namespace, hbaseTableName))) {
       val admin = catalog.admin
-      val desc = new HTableDescriptor(hbaseTableName)
+      val desc = new HTableDescriptor(TableName.valueOf(hbaseTableName))
       desc.addFamily(new HColumnDescriptor(family1))
       desc.addFamily(new HColumnDescriptor(family2))
       admin.createTable(desc)
@@ -57,23 +58,9 @@ class HBaseCatalogTestSuite extends TestBase {
       new GenericRow(Array(4096.0, "SF", 512: Short))
     ).map(HBaseKVHelper.makeRowKey(_, Seq(DoubleType, StringType, ShortType)))
 
+    catalog.createTable(tableName, namespace, hbaseTableName, allColumns, splitKeys)
 
-    var properties = collection.mutable.Map[String, String]()
-    properties += ("tableName" -> tableName)
-    properties += ("namespace" -> namespace)
-    properties += ("hbaseTableName" -> hbaseTableName)
-    properties += ("encodingFormat" -> "binaryformat")
-
-    // TODO:
-//    properties = properties + ("colsSeq" -> "")
-//    properties = properties + ("keyCols" -> "")
-//    properties = properties + ("nonKeyCols" -> "")
-
-    val catalogTable = CatalogTable(null, null, null, null, properties = properties.toMap)
-
-    catalog.createTable(namespace, catalogTable, ignoreIfExists = true)
-
-    assert(catalog.tableExists("", tableName) === true)
+    assert(catalog.tableExists(namespace, tableName) === true)
     catalog.stopAdmin()
   }
 
