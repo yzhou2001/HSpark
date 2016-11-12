@@ -161,8 +161,10 @@ abstract class TestBase
   def dropNativeHbaseTable(tableName: String) = {
     try {
       val hbaseAdmin = TestHbase.hbaseAdmin
-      hbaseAdmin.disableTable(TableName.valueOf(tableName))
-      hbaseAdmin.deleteTable(TableName.valueOf(tableName))
+      if (hbaseAdmin.tableExists(TableName.valueOf(tableName))) {
+        hbaseAdmin.disableTable(TableName.valueOf(tableName))
+        hbaseAdmin.deleteTable(TableName.valueOf(tableName))
+      }
     } catch {
       case e: TableExistsException =>
         logError(s"Table already exists $tableName", e)

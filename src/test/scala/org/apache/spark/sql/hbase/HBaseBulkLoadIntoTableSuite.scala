@@ -35,7 +35,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("bulk load parser test, local file") {
 
     val parser = new SparkSqlParser(TestHbase.sessionState.conf)
-    val sql = raw"LOAD PARALL DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1"
+    val sql = raw"LOAD DATA LOCAL INPATH './usr/file.txt' INTO TABLE tb1"
 
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
@@ -52,7 +52,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("bulkload parser test, load hdfs file") {
 
     val parser = new SparkSqlParser(TestHbase.sessionState.conf)
-    val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1"
+    val sql = raw"LOAD DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1"
 
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
@@ -67,7 +67,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   test("bulkload parser test, using delimiter") {
 
     val parser = new SparkSqlParser(TestHbase.sessionState.conf)
-    val sql = raw"LOAD PARALL DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1 FIELDS TERMINATED BY '\\|' "
+    val sql = raw"LOAD DATA INPATH '/usr/hdfsfile.txt' INTO TABLE tb1"
 
     val plan: LogicalPlan = parser.parsePlan(sql)
     assert(plan != null)
@@ -80,8 +80,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
   }
 
   test("load data into hbase") {
-
-    val drop = "drop table testblk"
+    val drop = "DROP TABLE IF EXISTS testblk"
     val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
@@ -91,8 +90,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk(col1 STRING, col2 STRING, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (testblkHTable, COLS=[col2=cf1.a, col3=cf1.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='testblkHTable',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -124,7 +126,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
   test("load parall data into hbase") {
 
-    val drop = "drop table testblk"
+    val drop = "DROP TABLE IF EXISTS testblk"
     val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
@@ -136,8 +138,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk(col1 STRING, col2 STRING, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (testblkHTable, COLS=[col2=cf1.a, col3=cf1.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='testblkHTable',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -153,7 +158,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
     val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
@@ -169,7 +174,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
   test("load data with null column values into hbase") {
 
-    val drop = "drop table testNullColumnBulkload"
+    val drop = "DROP TABLE IF EXISTS testNullColumnBulkload"
     val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
@@ -179,8 +184,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testNullColumnBulkload(col1 STRING, col2 STRING, col3 STRING, col4 STRING, PRIMARY KEY(col1))
-          MAPPED BY (testNullColumnBulkloadHTable, COLS=[col2=cf1.a, col3=cf1.b, col4=cf1.c])"""
+    s"""CREATE TABLE testNullColumnBulkload TBLPROPERTIES(
+          'hbaseTableName'='testNullColumnBulkloadHTable',
+          'colsSeq'='col1,col2,col3,col4',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b;col4,STRING,cf1,c')"""
         .stripMargin
 
     val sql2 =
@@ -219,7 +227,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
   test("load parall data with null column values into hbase") {
 
-    val drop = "drop table testNullColumnBulkload"
+    val drop = "DROP TABLE IF EXISTS testNullColumnBulkload"
     val executeSql0 = TestHbase.sessionState.executeSql(drop)
     try {
       executeSql0.toRdd.collect()
@@ -231,8 +239,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testNullColumnBulkload(col1 STRING, col2 STRING, col3 STRING, col4 STRING, PRIMARY KEY(col1))
-          MAPPED BY (testNullColumnBulkloadHTable, COLS=[col2=cf1.a, col3=cf1.b, col4=cf1.c])"""
+      s"""CREATE TABLE testNullColumnBulkload TBLPROPERTIES(
+          'hbaseTableName'='testNullColumnBulkloadHTable',
+          'colsSeq'='col1,col2,col3,col4',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b;col4,STRING,cf1,c')"""
         .stripMargin
 
     val sql2 =
@@ -248,7 +259,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val inputFile = "'" + hbaseHome + "/loadNullableData.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testNullColumnBulkload"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testNullColumnBulkload"
 
     val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
@@ -273,8 +284,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     createNativeHbaseTable("multi_cf_table", Seq("cf1", "cf2"))
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk(col1 STRING, col2 STRING, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (multi_cf_table, COLS=[col2=cf1.a, col3=cf2.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='multi_cf_table',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -310,8 +324,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     createNativeHbaseTable("multi_cf_table", Seq("cf1", "cf2"))
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk(col1 STRING, col2 STRING, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (multi_cf_table, COLS=[col2=cf1.a, col3=cf2.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='multi_cf_table',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,STRING',
+          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -327,7 +344,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val inputFile = "'" + hbaseHome + "/loadData.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
     val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
@@ -350,8 +367,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE testblk(col1 INT, col2 INT, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (presplit_table, COLS=[col2=cf1.a, col3=cf2.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='presplit_table',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,INT',
+          'nonKeyCols'='col2,INT,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -387,8 +407,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE testblk(col1 INT, col2 INT, col3 STRING, PRIMARY KEY(col1))
-          MAPPED BY (presplit_table, COLS=[col2=cf1.a, col3=cf2.b])"""
+      s"""CREATE TABLE testblk TBLPROPERTIES(
+          'hbaseTableName'='presplit_table',
+          'colsSeq'='col1,col2,col3',
+          'keyCols'='col1,INT',
+          'nonKeyCols'='col2,INT,cf1,a;col3,STRING,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -404,7 +427,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val inputFile = "'" + hbaseHome + "/splitLoadData.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE testblk"
 
     val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
@@ -431,8 +454,11 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE region_cnt_131(col1 INT, col2 INT, PRIMARY KEY(col1))
-          MAPPED BY (REGION_CNT_131_HTBL, COLS=[col2=f.a])"""
+      s"""CREATE TABLE region_cnt_131 TBLPROPERTIES(
+          'hbaseTableName'='REGION_CNT_131_HTBL',
+          'colsSeq'='col1,col2',
+          'keyCols'='col1,INT',
+          'nonKeyCols'='col2,INT,f,a')"""
         .stripMargin
 
     val regionInfoList =
@@ -452,7 +478,7 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     val inputFile = "'" + hbaseHome + "/131_regions.txt'"
 
     // then load parall data into table
-    val loadSql = "LOAD PARALL DATA LOCAL INPATH " + inputFile + " INTO TABLE region_cnt_131"
+    val loadSql = "LOAD DATA LOCAL INPATH " + inputFile + " INTO TABLE region_cnt_131"
 
     val executeSql3 = TestHbase.sessionState.executeSql(loadSql)
     executeSql3.toRdd.collect()
