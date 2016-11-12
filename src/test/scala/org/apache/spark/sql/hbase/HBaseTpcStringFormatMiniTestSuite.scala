@@ -71,58 +71,12 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
      * create table
      */
     val createSql =
-      s"""CREATE TABLE store_sales_stringformat (
-          strkey STRING,
-          ss_sold_date_sk INTEGER,
-          ss_sold_time_sk INTEGER,
-          ss_item_sk INTEGER,
-          ss_customer_sk INTEGER,
-          ss_cdemo_sk INTEGER,
-          ss_hdemo_sk INTEGER,
-          ss_addr_sk INTEGER,
-          ss_store_sk INTEGER,
-          ss_promo_sk INTEGER,
-          ss_ticket_number INTEGER,
-          ss_quantity INTEGER,
-          ss_wholesale_cost FLOAT,
-          ss_list_price FLOAT,
-          ss_sales_price FLOAT,
-          ss_ext_discount_amt	FLOAT,
-          ss_ext_sales_price FLOAT,
-          ss_ext_wholesale_cost FLOAT,
-          ss_ext_list_price FLOAT,
-          ss_ext_tax FLOAT,
-          ss_coupon_amt FLOAT,
-          ss_net_paid FLOAT,
-          ss_net_paid_inc_tax FLOAT,
-          ss_net_profit FLOAT,
-          PRIMARY KEY(strkey))
-          MAPPED BY
-          (STORE_SALES_STRINGFORMAT, COLS=[
-            ss_sold_date_sk=f.ss_sold_date_sk,
-            ss_sold_time_sk=f.ss_sold_time_sk,
-            ss_item_sk=f.ss_item_sk,
-            ss_customer_sk=f.ss_customer_sk,
-            ss_cdemo_sk=f.ss_cdemo_sk,
-            ss_hdemo_sk=f.ss_hdemo_sk,
-            ss_addr_sk=f.ss_addr_sk,
-            ss_store_sk=f.ss_store_sk,
-            ss_promo_sk=f.ss_promo_sk,
-            ss_ticket_number=f.ss_ticket_number,
-            ss_quantity=f.ss_quantity,
-            ss_wholesale_cost=f.ss_wholesale_cost,
-            ss_list_price=f.ss_list_price,
-            ss_sales_price=f.ss_sales_price,
-            ss_ext_discount_amt=f.ss_ext_discount_amt,
-            ss_ext_sales_price=f.ss_ext_sales_price,
-            ss_ext_wholesale_cost=f.ss_ext_wholesale_cost,
-            ss_ext_list_price=f.ss_ext_list_price,
-            ss_ext_tax=f.ss_ext_tax,
-            ss_coupon_amt=f.ss_coupon_amt,
-            ss_net_paid=f.ss_net_paid,
-            ss_net_paid_inc_tax=f.ss_net_paid_inc_tax,
-            ss_net_profit=f.ss_net_profit
-          ]) IN STRINGFORMAT""".stripMargin
+      s"""CREATE TABLE store_sales_stringformat TBLPROPERTIES(
+          'hbaseTableName'='STORE_SALES_STRINGFORMAT',
+          'colsSeq'='strkey,ss_sold_date_sk,ss_sold_time_sk,ss_item_sk,ss_customer_sk,ss_cdemo_sk,ss_hdemo_sk,ss_addr_sk,ss_store_sk,ss_promo_sk,ss_ticket_number,ss_quantity,ss_wholesale_cost,ss_list_price,ss_sales_price,ss_ext_discount_amt,ss_ext_sales_price,ss_ext_wholesale_cost,ss_ext_list_price,ss_ext_tax,ss_coupon_amt,ss_net_paid,ss_net_paid_inc_tax,ss_net_profit',
+          'keyCols'='strkey,STRING',
+          'nonKeyCols'='ss_sold_date_sk,INTEGER,f,ss_sold_date_sk;ss_sold_time_sk,INTEGER,f,ss_sold_time_sk;ss_item_sk,INTEGER,f,ss_item_sk;ss_customer_sk,INTEGER,f,ss_customer_sk;ss_cdemo_sk,INTEGER,f,ss_cdemo_sk;ss_hdemo_sk,INTEGER,f,ss_hdemo_sk;ss_addr_sk,INTEGER,f,ss_addr_sk;ss_store_sk,INTEGER,f,ss_store_sk;ss_promo_sk,INTEGER,f,ss_promo_sk;ss_ticket_number,INTEGER,f,ss_ticket_number;ss_quantity,INTEGER,f,ss_quantity;ss_wholesale_cost,FLOAT,f,ss_wholesale_cost;ss_list_price,FLOAT,f,ss_list_price;ss_sales_price,FLOAT,f,ss_sales_price;ss_ext_discount_amt,FLOAT,f,ss_ext_discount_amt;ss_ext_sales_price,FLOAT,f,ss_ext_sales_price;ss_ext_wholesale_cost,FLOAT,f,ss_ext_wholesale_cost;ss_ext_list_price,FLOAT,f,ss_ext_list_price;ss_ext_tax,FLOAT,f,ss_ext_tax;ss_coupon_amt,FLOAT,f,ss_coupon_amt;ss_net_paid,FLOAT,f,ss_net_paid;ss_net_paid_inc_tax,FLOAT,f,ss_net_paid_inc_tax;ss_net_profit,FLOAT,f,ss_net_profit')
+      """.stripMargin
 
     try {
       runSql(createSql)
@@ -152,7 +106,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
   test("Query 0") {
     val sql = "SELECT count(1) FROM store_sales_stringformat"
     val rows = runSql(sql)
-    assert(rows.size == 1)
+    assert(rows.length == 1)
     assert(rows(0).get(0) == 10)
   }
 
@@ -160,7 +114,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     val sql = "SELECT ss_quantity, ss_wholesale_cost, ss_list_price FROM store_sales_stringformat WHERE ss_item_sk = 574 AND ss_ticket_number = 29"
     val rows = runSql(sql)
     // printRows(rows)
-    assert(rows.size == 1)
+    assert(rows.length == 1)
     assert(rows(0).get(0) == 33)
     assert(rows(0).get(1) == 68.24f)
     assert(rows(0).get(2) == 116.69f)
@@ -173,7 +127,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
-    assert(rows.size == 1)
+    assert(rows.length == 1)
     assert(rows(0).get(0) == 2452260)
     assert(rows(0).get(1) == 46712)
     assert(rows(0).get(2) == 19)
@@ -187,7 +141,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
-    assert(rows.size == 1)
+    assert(rows.length == 1)
     assert(rows(0).get(0) == null)
     assert(rows(0).get(1) == null)
     assert(rows(0).get(2) == 0.00f)
