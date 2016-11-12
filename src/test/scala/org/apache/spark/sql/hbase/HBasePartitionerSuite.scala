@@ -69,8 +69,8 @@ class HBasePartitionerSuite extends TestBase {
         KeyColumn("col3", StringType, 2), KeyColumn("col4", IntegerType, 3)))
 
     assert(BinaryBytesUtils.toDouble(rowkey, keys.head._1) === 123.456)
-    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(1)._1, keys(1)._2) === "abcdef")
-    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(2)._1, keys(2)._2) === "")
+    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(1)._1, keys(1)._2).toString === "abcdef")
+    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(2)._1, keys(2)._2).toString === "")
     assert(BinaryBytesUtils.toInt(rowkey, keys(3)._1) === 1234)
   }
 
@@ -88,7 +88,7 @@ class HBasePartitionerSuite extends TestBase {
         KeyColumn("col3", IntegerType, 2)))
 
     assert(BinaryBytesUtils.toDouble(rowkey, keys.head._1) === 123.456)
-    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(1)._1, keys(1)._2) === "abcdef")
+    assert(BinaryBytesUtils.toUTF8String(rowkey, keys(1)._1, keys(1)._2).toString === "abcdef")
     assert(BinaryBytesUtils.toInt(rowkey, keys(2)._1) === 1234)
   }
 
