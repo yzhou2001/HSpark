@@ -235,56 +235,29 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
       if (properties.contains("provider") && properties("provider") == "hbase") {
         val db = properties("db")
         val table = properties("table")
-        val relation = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table)
-        if (relation.isDefined) {
-          relation.get.logicalRelation
+        val catalogTable = session.sharedState.externalCatalog.getTable(db, table)
+        if (catalogTable != null) {
+          session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table).get.logicalRelation
         } else {
           s
         }
       } else {
         s
       }
-    }
+    case insert@InsertIntoTable(s: SimpleCatalogRelation, p, c, o, i) =>
+      val properties = s.metadata.properties
+      if (properties.contains("provider") && properties("provider") == "hbase") {
+        val db = properties("db")
+        val table = properties("table")
+        val catalogTable = session.sharedState.externalCatalog.getTable(db, table)
+        if (catalogTable != null) {
+          val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table).get.logicalRelation
+          insert.copy(table = t)
+        } else {
+          insert
+        }
+      } else {
+        insert
+      }
   }
-//      val tableName = properties("tableName")
-//      val namespace = if (properties.contains("namespace")) properties("namespace") else null
-//      val hbaseTableName = properties("hbaseTableName")
-//      val allColumns = properties("allColumns").split(";").map {
-//        case key if key.startsWith("true") =>
-//          //isKeyColumn,ordinal,sqlName,dataTypeName,order
-//          val keys = key.split(",")
-//          val ordinal = keys(1).toInt
-//          val sqlName = keys(2)
-//          val dataType = DataTypeUtils.getDataType(keys(3))
-//          val order = keys(4).toInt
-//          val keyColumn = KeyColumn(sqlName, dataType, order)
-//          keyColumn.ordinal = ordinal
-//          keyColumn
-//        case nonkey =>
-//          //isKeyColumn,ordinal,sqlName,dataTypeName,family,qualifier
-//          val keys = nonkey.split(",")
-//          val ordinal = keys(1).toInt
-//          val sqlName = keys(2)
-//          val dataType = DataTypeUtils.getDataType(keys(3))
-//          val family = keys(4)
-//          val qualifier = keys(5)
-//          val nonKeyColumn = NonKeyColumn(sqlName, dataType, family, qualifier)
-//          nonKeyColumn.ordinal = ordinal
-//          nonKeyColumn
-//      }.toSeq
-//      val deploySuccessfully = {
-//        if (properties.contains("deploySuccessfully")) {
-//          Some(properties("deploySuccessfully").toBoolean)
-//        } else {
-//          None
-//        }
-//      }
-//      val hasCoprocessor = properties("hasCoprocessor").toBoolean
-//      val encodingFormat = properties("encodingFormat")
-//      val relation = new HBaseRelation(tableName, namespace, hbaseTableName,
-//        allColumns, deploySuccessfully, hasCoprocessor, encodingFormat,
-//        session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].connection)(session.sqlContext)
-//      LogicalRelation(relation)
-//    }
-//  }
-//}
+}

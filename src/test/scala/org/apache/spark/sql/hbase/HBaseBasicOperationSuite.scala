@@ -57,9 +57,11 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("Insert and Query Single Row") {
-    sql( """CREATE TABLE tb1 (column1 INTEGER, column2 STRING,
-          PRIMARY KEY(column1))
-          MAPPED BY (ht1, COLS=[column2=cf.cq])"""
+    sql( """CREATE TABLE tb1 TBLPROPERTIES(
+        'hbaseTableName'='ht1',
+        'colsSeq'='column1,column2',
+        'keyCols'='column1,INTEGER',
+        'nonKeyCols'='column2,STRING,cf,cq')"""
     )
 
     assert(sql( """SELECT * FROM tb1""").collect().length == 0)
@@ -77,11 +79,11 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("Insert and Query Single Row in StringFormat") {
-    sql( """CREATE TABLE tb1 (col1 STRING, col2 BOOL, col3 SHORT, col4 INTEGER,
-           |          col5 LONG, col6 FLOAT, col7 DOUBLE,
-           |          PRIMARY KEY(col1))
-           |          MAPPED BY (ht2, COLS=[col2=cf1.cq11, col3=cf1.cq12, col4=cf1.cq13,
-           |          col5=cf2.cq21, col6=cf2.cq22, col7=cf2.cq23]) In StringFormat""".stripMargin
+    sql( """CREATE TABLE tb1 TBLPROPERTIES(
+        'hbaseTableName'='ht2',
+        'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
+        'keyCols'='col1,STRING',
+        'nonKeyCols'='col2,BOOLEAN,cf1,cq11;col3,SHORT,cf1,cq12;col4,INTEGER,cf1,cq13;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq22;col7,DOUBLE,cf2,cq23')""".stripMargin
     )
 
     assert(sql( """SELECT * FROM tb1""").collect().length == 0)
@@ -123,14 +125,15 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("Point Aggregate Query") {
-    sql( """CREATE TABLE tb2 (column2 INTEGER, column1 INTEGER, column4 FLOAT,
-          column3 SHORT, PRIMARY KEY(column1, column2))
-          MAPPED BY (default.ht0, COLS=[column3=family1.qualifier1,
-          column4=family2.qualifier2])"""
+    sql( """CREATE TABLE tb2 TBLPROPERTIES(
+        'hbaseTableName'='default.ht0',
+        'colsSeq'='column2,column1,column4,column3',
+        'keyCols'='column1,INTEGER;column2,INTEGER',
+        'nonKeyCols'='column3,SHORT,family1,qualifier1;column4,FLOAT,family2,qualifier2')"""
     )
     sql( """INSERT INTO TABLE tb2 SELECT col4,col4,col6,col3 FROM ta""")
     val result = sql( """SELECT count(*) FROM tb2 where column1=1 AND column2=1""").collect()
-    assert(result.size == 1)
+    assert(result.length == 1)
     assert(result(0).get(0) == 1)
   }
 
@@ -166,17 +169,21 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("Select test 4 (join)") {
+    val enabled = sqlContext.getConf("spark.sql.crossJoin.enabled")
+    sqlContext.setConf("spark.sql.crossJoin.enabled", "true")
     assert(sql( """SELECT ta.col2 FROM ta join tb on ta.col4=tb.col7""").collect().length == 2)
     assert(sql( """SELECT * FROM ta FULL OUTER JOIN tb WHERE tb.col7 = 1""").collect().length == 14)
     assert(sql( """SELECT * FROM ta LEFT JOIN tb WHERE tb.col7 = 1""").collect().length == 14)
     assert(sql( """SELECT * FROM ta RIGHT JOIN tb WHERE tb.col7 = 1""").collect().length == 14)
+    sqlContext.setConf("spark.sql.crossJoin.enabled", enabled)
   }
 
-  test("Alter Add column and Alter Drop column") {
-    assert(sql( """SELECT * FROM ta""").collect()(0).size == 7)
+  // alter table is not supported for now
+  ignore("Alter Add column and Alter Drop column") {
+    assert(sql( """SELECT * FROM ta""").collect()(0).length == 7)
     sql( """ALTER TABLE ta ADD col8 STRING MAPPED BY (col8 = cf1.cf13)""")
-    assert(sql( """SELECT * FROM ta""").collect()(0).size == 8)
+    assert(sql( """SELECT * FROM ta""").collect()(0).length == 8)
     sql( """ALTER TABLE ta DROP col8""")
-    assert(sql( """SELECT * FROM ta""").collect()(0).size == 7)
+    assert(sql( """SELECT * FROM ta""").collect()(0).length == 7)
   }
 }

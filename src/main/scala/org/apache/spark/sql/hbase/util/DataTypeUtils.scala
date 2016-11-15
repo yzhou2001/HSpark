@@ -203,6 +203,8 @@ object DataTypeUtils {
     } else if (dataType.equalsIgnoreCase(BooleanType.typeName)) {
       BooleanType
     } else {
+      val s = BooleanType.typeName
+      println(s)
       throw new IllegalArgumentException(s"Unrecognized data type: $dataType")
     }
   }
