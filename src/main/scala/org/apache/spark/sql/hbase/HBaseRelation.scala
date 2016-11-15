@@ -642,15 +642,14 @@ private[hbase] case class HBaseRelation(
           } else {
             None
           }
-        case In(value@AttributeReference(name, dataType, _, _), list) =>
+        case In(value@AttributeReference(name, dataType, _, _), list: Seq[Literal]) =>
           val column = nonKeyColumns.find(_.sqlName == name)
           if (column.isDefined) {
             val filterList = new FilterList(FilterList.Operator.MUST_PASS_ONE)
             for (item <- list.distinct) {
               val filter = new SingleColumnValueFilter(column.get.familyRaw,
                 column.get.qualifierRaw, CompareFilter.CompareOp.EQUAL,
-                DataTypeUtils.getBinaryComparator(bytesUtils.create(dataType),
-                  item.asInstanceOf[Literal]))
+                DataTypeUtils.getBinaryComparator(bytesUtils.create(dataType), item))
               filterList.addFilter(filter)
             }
             Some(filterList)

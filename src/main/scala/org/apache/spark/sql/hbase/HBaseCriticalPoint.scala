@@ -240,13 +240,13 @@ object RangeCriticalPoint {
       expression transform {
         case a@In(AttributeReference(_, _, _, _), list) =>
           if (a.value.equals(key)) {
-            list.filter(_.isInstanceOf[Literal]).foreach(v =>
+            list.distinct.filter(_.isInstanceOf[Literal]).foreach(v =>
               checkAndAdd(v.asInstanceOf[Literal].value, CriticalPointType.bothInclusive))
           }
           a
-        case a@InSet(AttributeReference(_, _, _, _), list) =>
+        case a@InSet(AttributeReference(_, _, _, _), set) =>
           if (a.child.equals(key)) {
-            list.foreach(v => checkAndAdd(v, CriticalPointType.bothInclusive))
+            set.foreach(v => checkAndAdd(v, CriticalPointType.bothInclusive))
           }
           a
         case a@EqualTo(AttributeReference(_, _, _, _), Literal(value, _)) =>
