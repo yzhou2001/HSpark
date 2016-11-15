@@ -100,14 +100,14 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   test("SQRT") {
     checkAnswer(
       sql("SELECT SQRT(k) FROM testData"),
-      (1 to 100).map(x => Row(math.sqrt(x.toDouble))).toSeq
+      (1 to 100).map(x => Row(math.sqrt(x.toDouble)))
     )
   }
 
   test("SQRT with automatic string casts") {
     checkAnswer(
       sql("SELECT SQRT(CAST(k AS STRING)) FROM testData"),
-      (1 to 100).map(x => Row(math.sqrt(x.toDouble))).toSeq
+      (1 to 100).map(x => Row(math.sqrt(x.toDouble)))
     )
   }
 
@@ -225,15 +225,15 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
     checkAnswer(
       sql("SELECT b FROM binaryData ORDER BY a DESC"),
-      (1 to 5).map(Row(_)).toSeq.reverse)
+      (1 to 5).map(Row(_)).reverse)
 
     checkAnswer(
       sql("SELECT * FROM arrayData ORDER BY dt[0] ASC"),
-      arrayData.collect().sortBy(_.dt(0)).map(Row.fromTuple).toSeq)
+      arrayData.collect().sortBy(_.dt.head).map(Row.fromTuple).toSeq)
 
     checkAnswer(
       sql("SELECT * FROM arrayData ORDER BY dt[0] DESC"),
-      arrayData.collect().sortBy(_.dt(0)).reverse.map(Row.fromTuple).toSeq)
+      arrayData.collect().sortBy(_.dt.head).reverse.map(Row.fromTuple).toSeq)
 
     checkAnswer(
       sql("SELECT * FROM mapData ORDER BY dt[1] ASC"),
@@ -782,7 +782,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
     checkAnswer(
       sql(s"SELECT k FROM testData WHERE k > ${Long.MinValue}"),
-      (1 to 100).map(Row(_)).toSeq
+      (1 to 100).map(Row(_))
     )
   }
 

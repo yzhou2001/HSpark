@@ -195,7 +195,7 @@ object TestData {
 
   // An RDD with 4 elements and 8 partitions
   val withEmptyParts = TestHbase.sparkContext.parallelize((1 to 4).map(IntField), 8).toDF()
-  withEmptyParts.registerTempTable("withEmptyParts")
+  withEmptyParts.createOrReplaceTempView("withEmptyParts")
 
   case class Person(id: Int, name: String, age: Int)
 

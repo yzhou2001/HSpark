@@ -146,8 +146,8 @@ class HBaseAdditionalQuerySuite extends TestBase {
   test("TEST Random") {
     val df: DataFrame = TestHbase.table("spark_teacher_3key")
     import org.apache.spark.sql.functions._
-    assert(df.select(col("*"), randn(5L)).collect().size == 12)
-    assert(df.select(rand, acos("teacher_age")).collect().size == 12)
+    assert(df.select(col("*"), randn(5L)).collect().length == 12)
+    assert(df.select(rand, acos("teacher_age")).collect().length == 12)
   }
 
   test("Union Parquet Table Test") {
