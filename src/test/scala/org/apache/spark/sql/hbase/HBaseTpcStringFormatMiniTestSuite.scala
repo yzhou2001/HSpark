@@ -75,7 +75,8 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
           'hbaseTableName'='STORE_SALES_STRINGFORMAT',
           'colsSeq'='strkey,ss_sold_date_sk,ss_sold_time_sk,ss_item_sk,ss_customer_sk,ss_cdemo_sk,ss_hdemo_sk,ss_addr_sk,ss_store_sk,ss_promo_sk,ss_ticket_number,ss_quantity,ss_wholesale_cost,ss_list_price,ss_sales_price,ss_ext_discount_amt,ss_ext_sales_price,ss_ext_wholesale_cost,ss_ext_list_price,ss_ext_tax,ss_coupon_amt,ss_net_paid,ss_net_paid_inc_tax,ss_net_profit',
           'keyCols'='strkey,STRING',
-          'nonKeyCols'='ss_sold_date_sk,INTEGER,f,ss_sold_date_sk;ss_sold_time_sk,INTEGER,f,ss_sold_time_sk;ss_item_sk,INTEGER,f,ss_item_sk;ss_customer_sk,INTEGER,f,ss_customer_sk;ss_cdemo_sk,INTEGER,f,ss_cdemo_sk;ss_hdemo_sk,INTEGER,f,ss_hdemo_sk;ss_addr_sk,INTEGER,f,ss_addr_sk;ss_store_sk,INTEGER,f,ss_store_sk;ss_promo_sk,INTEGER,f,ss_promo_sk;ss_ticket_number,INTEGER,f,ss_ticket_number;ss_quantity,INTEGER,f,ss_quantity;ss_wholesale_cost,FLOAT,f,ss_wholesale_cost;ss_list_price,FLOAT,f,ss_list_price;ss_sales_price,FLOAT,f,ss_sales_price;ss_ext_discount_amt,FLOAT,f,ss_ext_discount_amt;ss_ext_sales_price,FLOAT,f,ss_ext_sales_price;ss_ext_wholesale_cost,FLOAT,f,ss_ext_wholesale_cost;ss_ext_list_price,FLOAT,f,ss_ext_list_price;ss_ext_tax,FLOAT,f,ss_ext_tax;ss_coupon_amt,FLOAT,f,ss_coupon_amt;ss_net_paid,FLOAT,f,ss_net_paid;ss_net_paid_inc_tax,FLOAT,f,ss_net_paid_inc_tax;ss_net_profit,FLOAT,f,ss_net_profit')
+          'nonKeyCols'='ss_sold_date_sk,INTEGER,f,ss_sold_date_sk;ss_sold_time_sk,INTEGER,f,ss_sold_time_sk;ss_item_sk,INTEGER,f,ss_item_sk;ss_customer_sk,INTEGER,f,ss_customer_sk;ss_cdemo_sk,INTEGER,f,ss_cdemo_sk;ss_hdemo_sk,INTEGER,f,ss_hdemo_sk;ss_addr_sk,INTEGER,f,ss_addr_sk;ss_store_sk,INTEGER,f,ss_store_sk;ss_promo_sk,INTEGER,f,ss_promo_sk;ss_ticket_number,INTEGER,f,ss_ticket_number;ss_quantity,INTEGER,f,ss_quantity;ss_wholesale_cost,FLOAT,f,ss_wholesale_cost;ss_list_price,FLOAT,f,ss_list_price;ss_sales_price,FLOAT,f,ss_sales_price;ss_ext_discount_amt,FLOAT,f,ss_ext_discount_amt;ss_ext_sales_price,FLOAT,f,ss_ext_sales_price;ss_ext_wholesale_cost,FLOAT,f,ss_ext_wholesale_cost;ss_ext_list_price,FLOAT,f,ss_ext_list_price;ss_ext_tax,FLOAT,f,ss_ext_tax;ss_coupon_amt,FLOAT,f,ss_coupon_amt;ss_net_paid,FLOAT,f,ss_net_paid;ss_net_paid_inc_tax,FLOAT,f,ss_net_paid_inc_tax;ss_net_profit,FLOAT,f,ss_net_profit',
+          'encodingFormat'='stringformat')
       """.stripMargin
 
     try {
@@ -234,7 +235,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
          |avg(ss_wholesale_cost) as avg_wholesale_cost
          |FROM store_sales_stringformat
          |WHERE ss_item_sk > 1000 AND ss_item_sk < 18000
-         |GROUP BY ss_item_sk, ss_ticket_number"""
+         |GROUP BY ss_item_sk, ss_ticket_number ORDER BY ss_item_sk DESC"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -246,11 +247,11 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(2) == 82.35f)
     assert(rows(0).get(2) == 82.3499984741211)
 
-    assert(rows(4).get(0) == 3163)
-    assert(rows(4).get(1) == 7)
-    assert(rows(4).get(2) == 69.53f)
-    assert(rows(4).get(2) == 69.53f)
-    assert(rows(4).get(2) == 69.52999877929688)
+    assert(rows(2).get(0) == 3163)
+    assert(rows(2).get(1) == 7)
+    assert(rows(2).get(2) == 69.53f)
+    assert(rows(2).get(2) == 69.53f)
+    assert(rows(2).get(2) == 69.52999877929688)
   }
 
   test("Query 9") {

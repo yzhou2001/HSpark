@@ -104,7 +104,7 @@ private[hbase] case class HBaseRelation(
                                          allColumns: Seq[AbstractColumn],
                                          deploySuccessfully: Option[Boolean],
                                          hasCoprocessor: Boolean = false,
-                                         encodingFormat: String = "binaryformat",
+                                         encodingFormat: String = BinaryBytesUtils.name,
                                          @transient connection : Connection = null)
                                        (@transient var context: SQLContext)
   extends BaseRelation with InsertableRelation with Serializable {
@@ -127,10 +127,12 @@ private[hbase] case class HBaseRelation(
       }
     )
 
-  @transient lazy val bytesUtils: BytesUtils = encodingFormat match {
-    case "stringformat" => StringBytesUtils
-    case _ => BinaryBytesUtils
-  }
+  @transient lazy val bytesUtils: BytesUtils =
+    if (encodingFormat.equalsIgnoreCase(StringBytesUtils.name)) {
+      StringBytesUtils
+    } else {
+      BinaryBytesUtils
+    }
 
   lazy val partitionKeys = keyColumns.map(col =>
     logicalRelation.output.find(_.name == col.sqlName).get)

@@ -22,6 +22,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 trait BytesUtils {
+  def name: String
   def create(dataType: DataType): ToBytesUtils
 
   def toUTF8String(input: HBaseRawType, offset: Int, length: Int): UTF8String
@@ -102,6 +103,8 @@ trait ToBytesUtils {
 }
 
 object BinaryBytesUtils extends BytesUtils{
+  override def name = "binaryformat"
+
   def create(dataType: DataType): ToBytesUtils = {
     dataType match {
       case BooleanType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_BOOLEAN), BooleanType)
@@ -249,7 +252,9 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
 }
 
 
-object StringBytesUtils extends BytesUtils{
+object StringBytesUtils extends BytesUtils {
+  override def name = "stringformat"
+
   def create(dataType: DataType): ToBytesUtils = {
     dataType match {
       case BooleanType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_BOOLEAN), BooleanType)

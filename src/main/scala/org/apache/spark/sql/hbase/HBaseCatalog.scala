@@ -45,7 +45,7 @@ import org.apache.spark.sql.catalyst.util.StringUtils
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
-import org.apache.spark.sql.hbase.util.{DataTypeUtils, Util}
+import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, Util}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.util.SerializableConfiguration
@@ -245,7 +245,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
 
   def createTable(tableName: String, hbaseNamespace: String, hbaseTableName: String,
                   allColumns: Seq[AbstractColumn], splitKeys: Array[Array[Byte]],
-                  encodingFormat: String = "binaryformat"): HBaseRelation = {
+                  encodingFormat: String = BinaryBytesUtils.name): HBaseRelation = {
     try {
       val metadataTable = getMetadataTable
 
@@ -301,7 +301,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
     if (hbaseTableName == null) {
       throw new Exception(s"HBase table name is not defined")
     }
-    val encodingFormat = tableDefinition.properties.getOrElse("encodingFormat", "binaryformat")
+    val encodingFormat = tableDefinition.properties.getOrElse("encodingFormat", BinaryBytesUtils.name)
     val colsSeq = tableDefinition.properties.getOrElse("colsSeq", "").split(",")
     val keyCols = tableDefinition.properties.getOrElse("keyCols", "").split(";")
       .map { c => val cols = c.split(","); (cols(0), cols(1)) }
