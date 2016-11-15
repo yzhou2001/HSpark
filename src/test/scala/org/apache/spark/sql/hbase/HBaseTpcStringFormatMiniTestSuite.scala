@@ -482,7 +482,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
       s"""SELECT strkey, ss_item_sk, ss_ticket_number, count(1)
          |FROM store_sales_stringformat
          |WHERE ss_ticket_number >= 10 and ss_ticket_number <= 20
-         |GROUP BY strkey, ss_item_sk, ss_ticket_number"""
+         |GROUP BY strkey, ss_item_sk, ss_ticket_number ORDER BY strkey"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
@@ -493,14 +493,14 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(2) == 10)
     assert(rows(0).get(3) == 1)
 
-    assert(rows(1).get(0) == "18669000000011")
-    assert(rows(1).get(1) == 18669)
-    assert(rows(1).get(2) == 11)
+    assert(rows(1).get(0) == "16335000000010")
+    assert(rows(1).get(1) == 16335)
+    assert(rows(1).get(2) == 10)
     assert(rows(1).get(3) == 1)
 
-    assert(rows(2).get(0) == "16335000000010")
-    assert(rows(2).get(1) == 16335)
-    assert(rows(2).get(2) == 10)
+    assert(rows(2).get(0) == "18669000000011")
+    assert(rows(2).get(1) == 18669)
+    assert(rows(2).get(2) == 11)
     assert(rows(2).get(3) == 1)
   }
 
@@ -509,11 +509,10 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
       s"""SELECT strkey, ss_item_sk, ss_ticket_number, SUM(ss_wholesale_cost) AS sum_wholesale_cost
          |FROM store_sales_stringformat
          |WHERE ss_ticket_number >= 10 and ss_ticket_number <= 20
-         |GROUP BY strkey, ss_item_sk, ss_ticket_number"""
+         |GROUP BY strkey, ss_item_sk, ss_ticket_number ORDER BY strkey"""
         .stripMargin
     val rows = runSql(sql)
     // printRows(rows)
-
     assert(rows.length == 3)
 
     assert(rows(0).get(0) == "00707000000010")
@@ -521,18 +520,16 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(2) == 10)
     assert(rows(0).get(3) == 10.260000228881836)
 
-    assert(rows(1).get(0) == "18669000000011")
-    assert(rows(1).get(1) == 18669)
-    assert(rows(1).get(2) == 11)
-    assert(rows(1).get(3) == 7.159999847412109)
+    assert(rows(1).get(0) == "16335000000010")
+    assert(rows(1).get(1) == 16335)
+    assert(rows(1).get(2) == 10)
+    assert(rows(1).get(3) == 82.3499984741211)
 
-    assert(rows(2).get(0) == "16335000000010")
-    assert(rows(2).get(1) == 16335)
-    assert(rows(2).get(2) == 10)
-    assert(rows(2).get(3) == 82.3499984741211)
+    assert(rows(2).get(0) == "18669000000011")
+    assert(rows(2).get(1) == 18669)
+    assert(rows(2).get(2) == 11)
+    assert(rows(2).get(3) == 7.159999847412109)
   }
-
-
 
   test("Query 23") {
     val sql =
