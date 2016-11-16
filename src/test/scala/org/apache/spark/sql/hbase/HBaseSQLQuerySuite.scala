@@ -161,10 +161,13 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   }
 
   test("left semi greater than predicate") {
+    val enabled = sqlContext.getConf("spark.sql.crossJoin.enabled")
+    sqlContext.setConf("spark.sql.crossJoin.enabled", "true")
     checkAnswer(
       sql("SELECT * FROM testData2 x LEFT SEMI JOIN testData2 y ON x.a >= y.a + 2"),
       Seq(Row(3, 1), Row(3, 2))
     )
+    sqlContext.setConf("spark.sql.crossJoin.enabled", enabled)
   }
 
   test("index into array of arrays") {

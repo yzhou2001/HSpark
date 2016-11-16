@@ -266,7 +266,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
     checkResult(TestHbase.sql(sql), containExchange = false, 7)
 
     sql = "select col1,col2,col3,count(*) from testblk group by col1,col2,col3,col1+col3"
-    checkResult(TestHbase.sql(sql), containExchange = false, 7) //Sprecial case
+    checkResult(TestHbase.sql(sql), containExchange = false, 7) //Special case
 
     sql = "select count(*) from testblk group by col1+col3"
     checkResult(TestHbase.sql(sql), containExchange = true, 5)

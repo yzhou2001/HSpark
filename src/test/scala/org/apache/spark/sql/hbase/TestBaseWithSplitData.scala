@@ -18,6 +18,7 @@
 package org.apache.spark.sql.hbase
 
 import java.io.{ByteArrayOutputStream, DataOutputStream}
+import java.util.concurrent.Executors
 
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
@@ -122,9 +123,16 @@ class TestBaseWithSplitData extends TestBase {
         case (rowValue, rowType, colFamily, colQualifier) =>
           addRowVals(put, rowValue, rowType, colFamily, colQualifier)
       }
-      val htable = new HTable(TestHbase.sparkContext.hadoopConfiguration, HbaseTableName)
-      htable.put(put)
-      htable.close()
+      val executor = Executors.newFixedThreadPool(10)
+      val connection = ConnectionFactory.createConnection(
+        TestHbase.sparkContext.hadoopConfiguration, executor)
+      val table = connection.getTable(HbaseTableName)
+      try {
+        table.put(put)
+      } finally {
+        table.close()
+        connection.close()
+      }
     }
 
     putNewTableIntoHBase(Seq(-257, " n257 ", 128: Short),

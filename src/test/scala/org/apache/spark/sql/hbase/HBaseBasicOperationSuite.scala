@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.hsc.sql.hbase
+package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.TableName
 import org.apache.spark.sql.hbase.{TestHbase, TestBaseWithSplitData}
