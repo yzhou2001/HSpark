@@ -28,7 +28,7 @@ import org.apache.spark.{SparkConf, SparkContext}
  *
  */
 object HBaseSQLCliDriver extends Logging {
-  private val prompt = "astro"
+  private val prompt = "hspark"
   private val continuedPrompt = "".padTo(prompt.length, ' ')
   private val conf = new SparkConf()
   private val sc = new SparkContext(conf)

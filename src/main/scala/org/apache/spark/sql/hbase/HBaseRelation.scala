@@ -235,7 +235,7 @@ private[hbase] case class HBaseRelation(
       partitionTS = System.currentTimeMillis
       partitions = {
         val regionLocations : Seq[HRegionLocation] = connection_.getRegionLocator(hTableName)
-          .getAllRegionLocations.asScala.toSeq
+          .getAllRegionLocations.asScala
         logger.info(s"Number of HBase regions for " +
           s"table ${htable.getName.getNameAsString}: ${regionLocations.size}")
         regionLocations.zipWithIndex.map {

@@ -23,8 +23,6 @@ import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperation
 import org.apache.spark.sql.hbase.types.{HBaseBytesType, Range}
 import org.apache.spark.Partition
 
-
-
 private[hbase] class HBasePartition(
                                      val idx: Int, val mappedIndex: Int,
                                      start: Option[HBaseRawType] = None,

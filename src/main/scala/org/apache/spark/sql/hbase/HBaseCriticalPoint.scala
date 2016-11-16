@@ -81,7 +81,7 @@ private[hbase] class CriticalPointRange[+T](start: Option[T], startInclusive: Bo
   : Seq[MDCriticalPointRange[_]] = {
     (nextDimCriticalPointRanges, invalid) match {
       case (Nil, true) => Nil
-      case (Nil, false) => Seq(new MDCriticalPointRange(prefix.toSeq, this, dt))
+      case (Nil, false) => Seq(MDCriticalPointRange(prefix, this, dt))
       case _ =>
         prefix += ((start.get, dt))
         require(isPoint, "Internal Logical Error: point range expected")
@@ -426,7 +426,7 @@ object RangeCriticalPoint {
    * @param dimIndex the dimension index
    * @param row a row for partial reduction
    * @param predRefs the references in the predicate expression
-   * @return whether this CPR has all chidren invalid, plus a list of critical point ranges
+   * @return whether this CPR has all children invalid, plus a list of critical point ranges
    */
   private[hbase] def generateCriticalPointRangesHelper(relation: HBaseRelation,
                                                        predExpr: Expression,
@@ -439,7 +439,7 @@ object RangeCriticalPoint {
     val dt: AtomicType = keyDim.dataType.asInstanceOf[AtomicType]
     // Step 1.1
     val criticalPoints: Seq[CriticalPoint[dt.InternalType]]
-    = collect(predExpr, relation.partitionKeys(dimIndex))
+      = collect(predExpr, relation.partitionKeys(dimIndex))
     if (criticalPoints.isEmpty) (false, Nil)
     else {
       val cpRanges: Seq[CriticalPointRange[dt.InternalType]]
@@ -455,7 +455,7 @@ object RangeCriticalPoint {
 
       if (cpRanges.nonEmpty && qualifiedCPRanges.isEmpty) {
         // all children are disqualified
-        (true, Nil)
+        return (true, Nil)
       }
 
       // Step 1.3

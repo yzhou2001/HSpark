@@ -66,27 +66,27 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
     }
   }
 
-  private var relation: HBaseRelation = null
-  private var predExpr: Expression = null
-  private var predReferences: Seq[Attribute] = null
-  private var predicateMap: Seq[(String, Int)] = null
+  private var relation: HBaseRelation = _
+  private var predExpr: Expression = _
+  private var predReferences: Seq[Attribute] = _
+  private var predicateMap: Seq[(String, Int)] = _
   private val cellMap: scala.collection.mutable.Map[NonKeyColumn, Any] =
     scala.collection.mutable.Map[NonKeyColumn, Any]()
 
   // the root node: a placeholder for tree processing convenience
-  private var root: Node = null
+  private var root: Node = _
 
   // the current row key values? may be useful ??
-  private var currentValues: Seq[Any] = null
+  private var currentValues: Seq[Any] = _
 
   // the next hint
-  private var nextReturnCode: ReturnCode = null
+  private var nextReturnCode: ReturnCode = _
 
   // the next key hint
-  private var nextKeyValue: Cell = null
+  private var nextKeyValue: Cell = _
 
   // the next possible row key
-  private var nextRowKey: HBaseRawType = null
+  private var nextRowKey: HBaseRawType = _
 
   // the flag to determine whether to filter the remaining or not
   private var filterAllRemainingSetting: Boolean = false
@@ -98,12 +98,12 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
   private var filterRowFlag: Boolean = false
 
   // the remaining predicate that can't be used for dimension range comparison
-  private var remainingPredicate: Seq[Attribute] = null
+  private var remainingPredicate: Seq[Attribute] = _
   // cache of the bound ref for the node.children(childIndex)
-  private var remainingPredicateBoundRef: Expression = null
+  private var remainingPredicateBoundRef: Expression = _
 
   // the working row
-  private var workingRow: GenericMutableRow = null
+  private var workingRow: GenericMutableRow = _
 
   /**
    * constructor method
@@ -500,7 +500,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
       }
       node = levelNode
     }
-    HBaseKVHelper.encodingRawKeyColumns(list.toSeq)
+    HBaseKVHelper.encodingRawKeyColumns(list)
   }
 
   /**
