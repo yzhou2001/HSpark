@@ -24,18 +24,17 @@ import org.apache.hadoop.hbase.{HBaseConfiguration, _}
 import org.apache.log4j.Logger
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.catalyst.NotPusher
 import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.hbase.types.Range
 import org.apache.spark.sql.hbase.util._
-import org.apache.spark.sql.sources.{BaseRelation, CatalystScan, InsertableRelation, RelationProvider}
+import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, RelationProvider}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.catalyst.catalog.{CatalogColumn, CatalogStorageFormat, CatalogTable, CatalogTableType}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -860,8 +859,8 @@ private[hbase] case class HBaseRelation(
           case (true, _) => (false, null)
 
           // Any and all absent columns aren't enough to determine the record qualification,
-          // so the 'remaining' prdeicate's projections have to be consulted and we
-          // can avoid full projection again by adding the 'remaining' prdeicate's projections
+          // so the 'remaining' predicate's projections have to be consulted and we
+          // can avoid full projection again by adding the 'remaining' predicate's projections
           // to the scan's column map if the projections are non-key columns
           case (null, reducedPred) =>
             val nkRefs = reducedPred.references.map(_.name).filterNot(
@@ -936,7 +935,7 @@ private[hbase] case class HBaseRelation(
         DataTypeUtils.setRowColumnFromHBaseRawType(
           row, projection._2, kv.getValueArray, kv.getValueOffset, kv.getValueLength, dt, bytesUtils)
       } else {
-        // for complex types, deserialiation is involved and we aren't sure about buffer safety
+        // for complex types, deserialization is involved and we aren't sure about buffer safety
         val colValue = CellUtil.cloneValue(kv)
         DataTypeUtils.setRowColumnFromHBaseRawType(
           row, projection._2, colValue, 0, colValue.length, dt, bytesUtils)

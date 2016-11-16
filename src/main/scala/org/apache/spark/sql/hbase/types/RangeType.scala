@@ -16,10 +16,11 @@
  */
 package org.apache.spark.sql.hbase.types
 
+import java.util.concurrent.ConcurrentHashMap
+
 import org.apache.spark.sql.catalyst.ScalaReflectionLock
 import org.apache.spark.sql.types._
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.math.PartialOrdering
 import scala.reflect.runtime.universe.typeTag
@@ -161,8 +162,8 @@ private[hbase] class RangeType[T] extends PartialOrderingDataType {
 
 object RangeType {
   import scala.reflect.runtime.universe.TypeTag
-  private val typeMap = new mutable.HashMap[TypeTag[_], RangeType[_]]
-    with mutable.SynchronizedMap[TypeTag[_], RangeType[_]]
+  import scala.collection.JavaConverters._
+  private val typeMap = new ConcurrentHashMap[TypeTag[_], RangeType[_]].asScala
 
   implicit class partialOrdering(dt: AtomicType) {
     private[sql] def toRangeType[T]: RangeType[T] =

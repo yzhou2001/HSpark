@@ -25,12 +25,12 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.catalyst.InternalRow
 
 object PartialPredicateOperations {
-  // When the checkNullness argument of the partialReduce method is false, the partial
+  // When the checkNull argument of the partialReduce method is false, the partial
   // reduction is nullness-based, i.e., uninterested columns are assigned nulls,
   // which necessitates changes of the null handling from the normal evaluations
   // of predicate expressions. The IsNull/IsNotNull will return indefinite results.
   //
-  // When the checkNullness argument of the partialReduce method is true, the "is null"
+  // When the checkNull argument of the partialReduce method is true, the "is null"
   // and "is not null" will return true or false in a definite manner; while other expressions
   // will evaluate to indefinite values.
   //

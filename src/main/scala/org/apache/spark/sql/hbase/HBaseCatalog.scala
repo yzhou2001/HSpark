@@ -261,8 +261,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
         createHBaseUserTable(hTableName, families, splitKeys,
           sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
       } else {
-        families.foreach {
-          case family =>
+        families.foreach { family =>
             if (!checkFamilyExists(hTableName, family)) {
               throw new Exception(s"HBase table does not contain column family: $family")
             }
@@ -428,7 +427,7 @@ private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
     // tmp path for storing HFile
     @transient val tmpPath = Util.getTempFilePath(
       hbContext.sparkContext.hadoopConfiguration, relation.tableName)
-    @transient val job = new Job(new JobConf(hbContext.sparkContext.hadoopConfiguration))
+    @transient val job = Job.getInstance(hbContext.sparkContext.hadoopConfiguration)
 
     HFileOutputFormat2.configureIncrementalLoad(job, relation.htable,
       relation.connection_.getRegionLocator(relation.hTableName))
