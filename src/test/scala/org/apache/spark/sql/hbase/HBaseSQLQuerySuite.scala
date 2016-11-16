@@ -586,25 +586,25 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
     sql(s"SET $testKey=$testVal")
     checkAnswer(
       sql("SET"),
-      Row(s"$testKey=$testVal")
+      Row(s"$testKey", s"$testVal")
     )
 
     sql(s"SET ${testKey + testKey}=${testVal + testVal}")
     checkAnswer(
       sql("set"),
       Seq(
-        Row(s"$testKey=$testVal"),
-        Row(s"${testKey + testKey}=${testVal + testVal}"))
+        Row(s"$testKey", s"$testVal"),
+        Row(s"${testKey + testKey}", s"${testVal + testVal}"))
     )
 
     // "set key"
     checkAnswer(
       sql(s"SET $testKey"),
-      Row(s"$testKey=$testVal")
+      Row(s"$testKey", s"$testVal")
     )
     checkAnswer(
       sql(s"SET $nonexistentKey"),
-      Row(s"$nonexistentKey=<undefined>")
+      Row(s"$nonexistentKey", "<undefined>")
     )
     sessionState.conf.clear()
   }
