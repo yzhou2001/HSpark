@@ -23,11 +23,11 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   var testnm = "Insert all rows to the table from other table"
   test("Insert all rows to the table from other table") {
-    val createQuery = s"""CREATE TABLE insertTestTable(strcol STRING, bytecol BYTE, shortcol SHORT,
-            intcol INTEGER, longcol LONG, floatcol FLOAT, doublecol DOUBLE, 
-            PRIMARY KEY(doublecol, strcol, intcol)) 
-            MAPPED BY (hinsertTestTable, COLS=[bytecol=cf1.hbytecol,
-            shortcol=cf1.hshortcol, longcol=cf2.hlongcol, floatcol=cf2.hfloatcol])"""
+    val createQuery = s"""CREATE TABLE insertTestTable TBLPROPERTIES(
+                      'hbaseTableName'='hinsertTestTable',
+                      'colsSeq'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
+                      'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
+                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')"""
       .stripMargin
     runSql(createQuery)
 
@@ -48,11 +48,11 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert few rows to the table from other table after applying filter"
   test("Insert few rows to the table from other table after applying filter") {
-    val createQuery = s"""CREATE TABLE insertTestTableFilter(strcol STRING, bytecol BYTE,
-            shortcol SHORT, intcol INTEGER, longcol LONG, floatcol FLOAT, doublecol DOUBLE, 
-            PRIMARY KEY(doublecol, strcol, intcol)) 
-            MAPPED BY (hinsertTestTableFilter, COLS=[bytecol=cf1.hbytecol,
-            shortcol=cf1.hshortcol, longcol=cf2.hlongcol, floatcol=cf2.hfloatcol])"""
+    val createQuery = s"""CREATE TABLE insertTestTableFilter TBLPROPERTIES(
+                      'hbaseTableName'='hinsertTestTableFilter',
+                      'colsSeq'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
+                      'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
+                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')""".stripMargin
       .stripMargin
     runSql(createQuery)
 
@@ -82,10 +82,11 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert few columns to the table from other table"
   test("Insert few columns to the table from other table") {
-    val createQuery = s"""CREATE TABLE insertTestTableFewCols(strcol STRING, bytecol BYTE,
-            shortcol SHORT, intcol INTEGER, PRIMARY KEY(strcol, intcol)) 
-            MAPPED BY (hinsertTestTableFewCols, COLS=[bytecol=cf1.hbytecol,
-            shortcol=cf1.hshortcol])"""
+    val createQuery = s"""CREATE TABLE insertTestTableFewCols TBLPROPERTIES(
+                      'hbaseTableName'='insertTestTableFewCols',
+                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'keyCols'='strcol,STRING;intcol,INTEGER',
+                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
       .stripMargin
     runSql(createQuery)
 
@@ -109,16 +110,17 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert into values test"
   test("Insert into values test") {
-    val createQuery = s"""CREATE TABLE insertValuesTest(strcol STRING, bytecol BYTE,
-            shortcol SHORT, intcol INTEGER, PRIMARY KEY(strcol, intcol)) 
-            MAPPED BY (hinsertValuesTest, COLS=[bytecol=cf1.hbytecol,
-            shortcol=cf1.hshortcol])"""
+    val createQuery = s"""CREATE TABLE insertValuesTest TBLPROPERTIES(
+                      'hbaseTableName'='hinsertValuesTest',
+                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'keyCols'='strcol,STRING;intcol,INTEGER',
+                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
       .stripMargin
     runSql(createQuery)
 
-    val insertQuery1 = s"INSERT INTO TABLE insertValuesTest VALUES('Row0','a',12340,23456780)"
-    val insertQuery2 = s"INSERT INTO TABLE insertValuesTest VALUES('Row1','b',12345,23456789)"
-    val insertQuery3 = s"INSERT INTO TABLE insertValuesTest VALUES('Row2','c',12342,23456782)"
+    val insertQuery1 = s"INSERT INTO TABLE insertValuesTest VALUES('Row0',97,12340,23456780)"
+    val insertQuery2 = s"INSERT INTO TABLE insertValuesTest VALUES('Row1',98,12345,23456789)"
+    val insertQuery3 = s"INSERT INTO TABLE insertValuesTest VALUES('Row2',99,12342,23456782)"
     runSql(insertQuery1)
     runSql(insertQuery2)
     runSql(insertQuery3)
@@ -142,10 +144,11 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert nullable values test"
   test("Insert nullable values test") {
-    val createQuery = s"""CREATE TABLE insertNullValuesTest(strcol STRING, bytecol BYTE,
-            shortcol SHORT, intcol INTEGER, PRIMARY KEY(strcol))
-            MAPPED BY (hinsertNullValuesTest, COLS=[bytecol=cf1.hbytecol,
-            shortcol=cf1.hshortcol, intcol=cf1.hintcol])"""
+    val createQuery = s"""CREATE TABLE insertNullValuesTest TBLPROPERTIES(
+                      'hbaseTableName'='hinsertNullValuesTest',
+                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'keyCols'='strcol,STRING',
+                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;intcol,INTEGER,cf1,hintcol')"""
       .stripMargin
     runSql(createQuery)
 
