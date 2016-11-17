@@ -299,18 +299,6 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
       Row(2))
   }
 
-  test("approximate count distinct") {
-    checkAnswer(
-      sql("SELECT APPROXIMATE COUNT(DISTINCT a) FROM testData2"),
-      Row(3))
-  }
-
-  test("approximate count distinct with user provided standard deviation") {
-    checkAnswer(
-      sql("SELECT APPROXIMATE(0.04) COUNT(DISTINCT a) FROM testData2"),
-      Row(3))
-  }
-
   test("null count") {
     checkAnswer(
       sql("SELECT a, COUNT(b) FROM testData3 GROUP BY a"),
@@ -323,7 +311,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
   test("inner join where, one match per row") {
     checkAnswer(
-      sql("SELECT * FROM upperCaseData JOIN lowerCaseData WHERE n = N"),
+      sql("SELECT * FROM upperCaseData JOIN lowerCaseData WHERE lowerCaseData.n = upperCaseData.N"),
       Seq(
         Row(1, "A", 1, "a"),
         Row(2, "B", 2, "b"),
@@ -333,7 +321,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
   test("inner join ON, one match per row") {
     checkAnswer(
-      sql("SELECT * FROM upperCaseData JOIN lowerCaseData ON n = N"),
+      sql("SELECT * FROM upperCaseData JOIN lowerCaseData ON lowerCaseData.n = upperCaseData.N"),
       Seq(
         Row(1, "A", 1, "a"),
         Row(2, "B", 2, "b"),
@@ -386,7 +374,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
   test("left outer join") {
     checkAnswer(
-      sql("SELECT * FROM upperCaseData LEFT OUTER JOIN lowerCaseData ON n = N"),
+      sql("SELECT * FROM upperCaseData LEFT OUTER JOIN lowerCaseData ON lowerCaseData.n = upperCaseData.N"),
       Row(1, "A", 1, "a") ::
         Row(2, "B", 2, "b") ::
         Row(3, "C", 3, "c") ::
@@ -397,7 +385,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
 
   test("right outer join") {
     checkAnswer(
-      sql("SELECT * FROM lowerCaseData RIGHT OUTER JOIN upperCaseData ON n = N"),
+      sql("SELECT * FROM lowerCaseData RIGHT OUTER JOIN upperCaseData ON lowerCaseData.n = upperCaseData.N"),
       Row(1, "a", 1, "A") ::
         Row(2, "b", 2, "B") ::
         Row(3, "c", 3, "C") ::
@@ -426,7 +414,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   test("SPARK-3349 partitioning after limit") {
     sql("SELECT DISTINCT n FROM lowerCaseData ORDER BY n DESC")
       .limit(2).createOrReplaceTempView("subset1")
-    sql("SELECT DISTINCT n FROM lowerCaseData")
+    sql("SELECT DISTINCT n FROM lowerCaseData ORDER BY n")
       .limit(2).createOrReplaceTempView("subset2")
     checkAnswer(
       sql("SELECT * FROM lowerCaseData INNER JOIN subset1 ON subset1.n = lowerCaseData.n"),
