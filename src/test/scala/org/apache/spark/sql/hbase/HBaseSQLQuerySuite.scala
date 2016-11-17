@@ -299,6 +299,18 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
       Row(2))
   }
 
+  test("approximate count distinct") {
+    checkAnswer(
+      sql("SELECT approx_count_distinct(a) FROM testData2"),
+      Row(3))
+  }
+
+  test("approximate count distinct with user provided standard deviation") {
+    checkAnswer(
+      sql("SELECT approx_count_distinct(a, 0.04) FROM testData2"),
+      Row(3))
+  }
+
   test("null count") {
     checkAnswer(
       sql("SELECT a, COUNT(b) FROM testData3 GROUP BY a"),
