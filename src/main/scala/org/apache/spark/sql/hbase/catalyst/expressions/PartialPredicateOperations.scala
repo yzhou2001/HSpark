@@ -181,7 +181,8 @@ object PartialPredicateOperations {
           val res = n.eval(input)
           (res, n)
         case IsNull(child) => if (checkNull) {
-            if (child == null) {
+          val evalChild = child.partialReduce(input, schema, true)
+          if (evalChild._1 == null) {
               (true, null)
             } else {
               (false, null)
@@ -190,7 +191,8 @@ object PartialPredicateOperations {
             (null, unboundAttributeReference(e, schema))
           }
         case IsNotNull(child) => if (checkNull) {
-            if (child == null) {
+          val evalChild = child.partialReduce(input, schema, true)
+          if (evalChild._1 == null) {
               (false, null)
             } else {
               (true, null)

@@ -215,6 +215,7 @@ private[hbase] class HBaseCustomFilter extends FilterBase with Writable {
 
   override def filterRowKey(buffer: Array[Byte], offset: Int, length: Int): Boolean = {
     // reset the index of each level
+    if (length == 0) return false;
     if (!nextColFlag) {
       val currentRowKey = new Array[Byte](length)
       Array.copy(buffer, offset, currentRowKey, 0, length)

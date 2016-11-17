@@ -744,6 +744,30 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     assert(rows(0).get(23) == -4398.98f)
   }
 
+  test("Query 28_1") {
+    val sql =
+      s"""SELECT ss_cdemo_sk FROM store_sales_stringformat
+          |WHERE ss_cdemo_sk IS NULL"""
+        .stripMargin
+    val rows = runSql(sql)
+    // printRows(rows)
+
+    assert(rows.length == 1)
+
+    assert(rows(0).get(0) == null)
+  }
+
+  test("Query 28_2") {
+    val sql =
+      s"""SELECT ss_cdemo_sk FROM store_sales_stringformat
+          |WHERE ss_cdemo_sk IS NOT NULL"""
+        .stripMargin
+    val rows = runSql(sql)
+    // printRows(rows)
+
+    assert(rows.length == 9)
+  }
+
   test("Query 29") {
     val sql =
       s"""SELECT * FROM store_sales_stringformat
