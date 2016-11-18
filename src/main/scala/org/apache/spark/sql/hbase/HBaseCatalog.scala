@@ -263,9 +263,9 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
           sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
       } else {
         families.foreach { family =>
-            if (!checkFamilyExists(hTableName, family)) {
-              throw new Exception(s"HBase table does not contain column family: $family")
-            }
+          if (!checkFamilyExists(hTableName, family)) {
+            throw new Exception(s"HBase table does not contain column family: $family")
+          }
         }
       }
 
@@ -356,15 +356,29 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def getTable(db: String, table: String): CatalogTable = {
-    if (tableExists(db, table)) {
+    val relation = getTable(table)
+    if (relation.isDefined) {
       val identifier = TableIdentifier(table, Some(db))
+
+      // prepare the schema for the table
+      val schema = relation.get.allColumns.map {
+        case k: KeyColumn =>
+          CatalogColumn(k.sqlName, k.dataType.simpleString, nullable = false,
+            comment = Some(s"KEY COLUMNS ${k.order}"))
+        case nk: NonKeyColumn =>
+          CatalogColumn(nk.sqlName, nk.dataType.simpleString, nullable = true,
+            comment = Some(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}"))
+      }
+
       val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
-        CatalogStorageFormat.empty, Seq.empty,
+        CatalogStorageFormat.empty, schema,
         properties = immutable.Map("provider" -> "hbase", "db" -> db, "table" -> table))
       catalogTable
-    } else {
-      null
-    }
+    } else
+  {
+    null
+  }
+
 
 //    val relation = getTable(table)
 //    if (relation.isDefined) {
