@@ -41,11 +41,12 @@ object HBaseSQLCliDriver extends Logging {
   private val QUIT = "QUIT"
   private val EXIT = "EXIT"
   private val HELP = "HELP"
-  private val KEYS = ""
+  private val KEYS = "QUIT EXIT HELP CREATE DROP ALTER LOAD SELECT INSERT DESCRIBE SHOW TABLES TBLPROPERTIES"
   private val KEYWORDS = {
-    val upper = Seq (QUIT, EXIT, HELP)
+    val upper = KEYS.split(" ")
     val lower = upper.map (_.toLowerCase())
-    Seq.concat(upper, lower)
+    val extra = Seq ("hbaseTableName", "colsSeq", "keyCols", "nonKeyCols")
+    Seq.concat(upper, lower, extra)
   }
 
   def getCompleters: Seq[Completer] = {
