@@ -33,6 +33,7 @@ import org.apache.spark.sql.Row
  * create HbTestTable and metadata table, and insert some data
  */
 class TestBaseWithSplitData extends TestBase {
+  val namespace = "default"
   val TableName_a: String = "ta"
   val TableName_b: String = "tb"
   val HbaseTableName = TableName.valueOf("ht")
@@ -87,7 +88,7 @@ class TestBaseWithSplitData extends TestBase {
     }
 
     TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createTable(
-      TableName_a, null, HbaseTableName.getNameAsString, allColumns, splitKeys)
+      TableName_a, namespace, HbaseTableName.getNameAsString, allColumns, splitKeys)
 
     runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
                 'hbaseTableName'='$HbaseTableName',

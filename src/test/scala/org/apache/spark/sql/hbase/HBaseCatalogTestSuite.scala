@@ -70,7 +70,7 @@ class HBaseCatalogTestSuite extends TestBase {
     val tableName = "testTable"
     val hbaseTableName = "hbaseTable"
 
-    val oresult = catalog.getTable(tableName)
+    val oresult = catalog.getHBaseRelation(hbaseNamespace, tableName, null)
     assert(oresult.isDefined)
     val result = oresult.get
     assert(result.tableName === tableName)
@@ -86,7 +86,7 @@ class HBaseCatalogTestSuite extends TestBase {
     assert(result.nonKeyColumns(1).dataType === FloatType)
     assert(result.nonKeyColumns.head.dataType === BooleanType)
 
-    val relation = catalog.lookupRelation(Seq(tableName))
+    val relation = catalog.lookupRelation("default", tableName)
     val subquery = relation.asInstanceOf[SubqueryAlias]
     val hbRelation = subquery.child.asInstanceOf[LogicalRelation].relation.asInstanceOf[HBaseRelation]
     assert(hbRelation.nonKeyColumns.map(_.family) == List("family1", "family2"))
@@ -97,19 +97,20 @@ class HBaseCatalogTestSuite extends TestBase {
   }
 
   test("Alter Table") {
+    val namespace = "default"
     val tableName = "testTable"
 
     val family1 = "family1"
     val column = NonKeyColumn("column5", BooleanType, family1, "qualifier3")
 
-    catalog.alterTableAddNonKey(tableName, column)
+    catalog.alterTableAddNonKey(namespace, tableName, column)
 
-    var result = catalog.getTable(tableName)
+    var result = catalog.getHBaseRelation(namespace, tableName, null)
     var table = result.get
     assert(table.allColumns.size === 5)
 
-    catalog.alterTableDropNonKey(tableName, column.sqlName)
-    result = catalog.getTable(tableName)
+    catalog.alterTableDropNonKey(namespace, tableName, column.sqlName)
+    result = catalog.getHBaseRelation(namespace, tableName, null)
     table = result.get
     assert(table.allColumns.size === 4)
     catalog.stopAdmin()
@@ -117,10 +118,11 @@ class HBaseCatalogTestSuite extends TestBase {
 
   test("Delete Table") {
     // prepare the test data
+    val namespace = "default"
     val tableName = "testTable"
 
-    catalog.dropTable("", tableName, ignoreIfNotExists = true)
-    assert(catalog.tableExists("", tableName) === false)
+    catalog.dropTable(namespace, tableName, ignoreIfNotExists = true)
+    assert(catalog.tableExists(namespace, tableName) === false)
     catalog.stopAdmin()
   }
 

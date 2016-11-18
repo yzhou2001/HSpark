@@ -233,11 +233,12 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
     case s: SimpleCatalogRelation =>
       val properties = s.metadata.properties
       if (properties.contains("provider") && properties("provider") == "hbase") {
-        val db = properties("db")
+        val namespace = properties("db")
         val table = properties("table")
-        val catalogTable = session.sharedState.externalCatalog.getTable(db, table)
+        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
-          session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table).get.logicalRelation
+          session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, table, null).get.logicalRelation
         } else {
           s
         }
@@ -247,11 +248,12 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
     case insert@InsertIntoTable(s: SimpleCatalogRelation, p, c, o, i) =>
       val properties = s.metadata.properties
       if (properties.contains("provider") && properties("provider") == "hbase") {
-        val db = properties("db")
+        val namespace = properties("db")
         val table = properties("table")
-        val catalogTable = session.sharedState.externalCatalog.getTable(db, table)
+        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
-          val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(table).get.logicalRelation
+          val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, table, null).get.logicalRelation
           insert.copy(table = t)
         } else {
           insert

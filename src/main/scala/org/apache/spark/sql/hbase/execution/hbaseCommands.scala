@@ -30,30 +30,29 @@ import org.apache.spark.sql.types._
 import scala.collection.mutable.ArrayBuffer
 
 @DeveloperApi
-case class AlterDropColCommand(tableName: String, columnName: String) extends RunnableCommand {
+case class AlterDropColCommand(namespace: String, tableName: String, columnName: String)
+  extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-      .alterTableDropNonKey(tableName, columnName)
+      .alterTableDropNonKey(namespace, tableName, columnName)
     sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin()
     Seq.empty[Row]
   }
 }
 
 @DeveloperApi
-case class AlterAddColCommand(
-                               tableName: String,
-                               colName: String,
-                               colType: String,
-                               colFamily: String,
-                               colQualifier: String) extends RunnableCommand {
+case class AlterAddColCommand(namespace: String,
+                              tableName: String,
+                              colName: String,
+                              colType: String,
+                              colFamily: String,
+                              colQualifier: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val hbaseCatalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-    hbaseCatalog.alterTableAddNonKey(tableName,
-      NonKeyColumn(
-        colName, DataTypeUtils.getDataType(colType), colFamily, colQualifier)
-    )
+    hbaseCatalog.alterTableAddNonKey(namespace, tableName,
+      NonKeyColumn(colName, DataTypeUtils.getDataType(colType), colFamily, colQualifier))
     hbaseCatalog.stopAdmin()
     Seq.empty[Row]
   }
@@ -86,11 +85,12 @@ case class ShowTablesCommand(databaseName: Option[String], tableIdentifierPatter
 }
 
 @DeveloperApi
-case class DescribeTableCommand(tableName: String) extends RunnableCommand {
+case class DescribeTableCommand(namespace: String, tableName: String) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val relation = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getTable(tableName)
+    val relation = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+      .getHBaseRelation(namespace, tableName, null)
     if (relation.isDefined) {
       relation.get.allColumns.foreach {
         case keyColumn: KeyColumn =>
@@ -123,11 +123,11 @@ case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
 
     val bytes = valueSeq.zipWithIndex.map(v =>
       DataTypeUtils.string2TypeData(v._1, relation.schema(v._2).dataType))
-    
+
     val rows = sparkSession.sparkContext.makeRDD(Seq(Row.fromSeq(bytes)))
     val inputValuesDF = sparkSession.createDataFrame(rows, relation.schema)
     relation.insert(inputValuesDF, overwrite = false)
-    
+
     Seq.empty[Row]
   }
 
