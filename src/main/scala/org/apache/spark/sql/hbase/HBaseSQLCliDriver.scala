@@ -19,7 +19,7 @@ package org.apache.spark.sql.hbase
 
 import java.io.{File, PrintWriter}
 
-import jline.console.completer.{Completer, StringsCompleter}
+import jline.console.completer.{Completer, FileNameCompleter, StringsCompleter}
 import jline.console.ConsoleReader
 import jline.console.history.FileHistory
 import org.apache.spark.internal.Logging
@@ -51,8 +51,10 @@ object HBaseSQLCliDriver extends Logging {
 
   def getCompleters: Seq[Completer] = {
     val completers = ArrayBuffer[Completer]()
-    val stringCompleter: StringsCompleter = new StringsCompleter(KEYWORDS.asJava)
-    completers.append(stringCompleter)
+
+    completers.append(new StringsCompleter(KEYWORDS.asJava))
+    completers.append(new FileNameCompleter)
+
     completers
   }
 
@@ -90,6 +92,10 @@ object HBaseSQLCliDriver extends Logging {
         } else {
           break = process(line, out)
         }
+        if (break) {
+          reader.getHistory.asInstanceOf[FileHistory].flush()
+          reader.shutdown()
+        }
       }
     } catch {
       case t: Throwable => t.printStackTrace()
@@ -113,8 +119,6 @@ object HBaseSQLCliDriver extends Logging {
       case QUIT => true
       case EXIT => true
       case HELP => printHelp(token); false
-      case "!" => // TODO: add support for bash command start with !
-        false
       case _ =>
         try {
           logInfo(s"Processing $line")
@@ -126,6 +130,7 @@ object HBaseSQLCliDriver extends Logging {
           if (!str.equals("++\n||\n++\n++\n")) out.println(str)
           val timeTaken: Double = (end - start) / 1000.0
           out.println(s"Time taken: $timeTaken seconds")
+          out.flush()
           false
         } catch {
           case e: Exception =>
