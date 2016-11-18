@@ -18,13 +18,13 @@
 #
 
 if [[ -z "$SPARK_HOME" ]]; then
-  echo "SPARKHOME is not set!" 1>&2
+  echo "SPARK_HOME is not set!" 1>&2
   exit 1
 fi
 
-export SPARK_HBASE_HOME="$(cd "`dirname "$0"`"/..; pwd)"
-export PYTHONPATH="$SPARK_HBASE_HOME/python"
+export HSPARK_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+export PYTHONPATH="$HSPARK_HOME/python"
 export OLD_PYTHONSTARTUP="$PYTHONSTARTUP"
-export PYTHONSTARTUP="$SPARK_HBASE_HOME/python/pyspark_hbase/shell.py"
+export PYTHONSTARTUP="$HSPARK_HOME/python/pyspark_hbase/shell.py"
 
 $SPARK_HOME/bin/pyspark
