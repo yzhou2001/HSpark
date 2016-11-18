@@ -34,6 +34,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 
+import scala.annotation.meta.param
+
 /**
  * HBaseCoprocessorSQLReaderRDD:
  */
@@ -41,7 +43,7 @@ class HBaseCoprocessorSQLReaderRDD(var relation: HBaseRelation,
                                    val codegenEnabled: Boolean,
                                    var finalOutput: Seq[Attribute],
                                    var otherFilters: Option[Expression],
-                                   @transient sqlContext: SQLContext)
+                                   @(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
 
   @transient var scanner: RegionScanner = _

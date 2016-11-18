@@ -18,7 +18,6 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.TableName
-import org.apache.spark.sql.hbase.{TestHbase, TestBaseWithSplitData}
 
 /**
  * Test insert / query against the table

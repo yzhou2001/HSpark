@@ -53,52 +53,50 @@ class TestBaseWithSplitData extends TestBase {
   }
 
   def createTable(useMultiplePartitions: Boolean) = {
-    try {
-      // delete the existing hbase table
-      if (TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
-        TestHbase.hbaseAdmin.disableTable(HbaseTableName)
-        TestHbase.hbaseAdmin.deleteTable(HbaseTableName)
-      }
-      if (TestHbase.hbaseAdmin.tableExists(Metadata_Table)) {
-        TestHbase.hbaseAdmin.disableTable(Metadata_Table)
-        TestHbase.hbaseAdmin.deleteTable(Metadata_Table)
-      }
+    // delete the existing hbase table
+    if (TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
+      TestHbase.hbaseAdmin.disableTable(HbaseTableName)
+      TestHbase.hbaseAdmin.deleteTable(HbaseTableName)
+    }
+    if (TestHbase.hbaseAdmin.tableExists(Metadata_Table)) {
+      TestHbase.hbaseAdmin.disableTable(Metadata_Table)
+      TestHbase.hbaseAdmin.deleteTable(Metadata_Table)
+    }
 
-      var allColumns = List[AbstractColumn]()
-      allColumns = allColumns :+ KeyColumn("col1", StringType, 1)
-      allColumns = allColumns :+ NonKeyColumn("col2", ByteType, "cf1", "cq11")
-      allColumns = allColumns :+ KeyColumn("col3", ShortType, 2)
-      allColumns = allColumns :+ NonKeyColumn("col4", IntegerType, "cf1", "cq12")
-      allColumns = allColumns :+ NonKeyColumn("col5", LongType, "cf2", "cq21")
-      allColumns = allColumns :+ NonKeyColumn("col6", FloatType, "cf2", "cq22")
-      allColumns = allColumns :+ KeyColumn("col7", IntegerType, 0)
+    var allColumns = List[AbstractColumn]()
+    allColumns = allColumns :+ KeyColumn("col1", StringType, 1)
+    allColumns = allColumns :+ NonKeyColumn("col2", ByteType, "cf1", "cq11")
+    allColumns = allColumns :+ KeyColumn("col3", ShortType, 2)
+    allColumns = allColumns :+ NonKeyColumn("col4", IntegerType, "cf1", "cq12")
+    allColumns = allColumns :+ NonKeyColumn("col5", LongType, "cf2", "cq21")
+    allColumns = allColumns :+ NonKeyColumn("col6", FloatType, "cf2", "cq22")
+    allColumns = allColumns :+ KeyColumn("col7", IntegerType, 0)
 
-      val splitKeys: Array[Array[Byte]] = if (useMultiplePartitions) {
-        Array(
-          new GenericRow(Array(256, " p256 ", 128: Short)),
-          new GenericRow(Array(32, " p32 ", 256: Short)),
-          new GenericRow(Array(-32, " n32 ", 128: Short)),
-          new GenericRow(Array(-256, " n256 ", 256: Short)),
-          new GenericRow(Array(-128, " n128 ", 128: Short)),
-          new GenericRow(Array(0, " zero ", 256: Short)),
-          new GenericRow(Array(128, " p128 ", 512: Short))
-        ).map(HBaseKVHelper.makeRowKey(_, Seq(IntegerType, StringType, ShortType)))
-      } else {
-        null
-      }
+    val splitKeys: Array[Array[Byte]] = if (useMultiplePartitions) {
+      Array(
+        new GenericRow(Array(256, " p256 ", 128: Short)),
+        new GenericRow(Array(32, " p32 ", 256: Short)),
+        new GenericRow(Array(-32, " n32 ", 128: Short)),
+        new GenericRow(Array(-256, " n256 ", 256: Short)),
+        new GenericRow(Array(-128, " n128 ", 128: Short)),
+        new GenericRow(Array(0, " zero ", 256: Short)),
+        new GenericRow(Array(128, " p128 ", 512: Short))
+      ).map(HBaseKVHelper.makeRowKey(_, Seq(IntegerType, StringType, ShortType)))
+    } else {
+      null
+    }
 
-      TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createTable(
-        TableName_a, null, HbaseTableName.getNameAsString, allColumns, splitKeys)
+    TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createTable(
+      TableName_a, null, HbaseTableName.getNameAsString, allColumns, splitKeys)
 
-      runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
-                  'hbaseTableName'='$HbaseTableName',
-                  'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
-                  'keyCols'='col7,INT;col1,STRING;col3,SHORT',
-                  'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
+    runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
+                'hbaseTableName'='$HbaseTableName',
+                'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
+                'keyCols'='col7,INT;col1,STRING;col3,SHORT',
+                'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
 
-      if (!TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
-        throw new IllegalArgumentException("where is our table?")
-      }
+    if (!TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
+      throw new IllegalArgumentException("where is our table?")
     }
   }
 

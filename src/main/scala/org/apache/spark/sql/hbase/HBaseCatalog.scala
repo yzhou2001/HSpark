@@ -51,6 +51,7 @@ import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.util.SerializableConfiguration
 import org.apache.spark.{SparkEnv, SparkHadoopWriter, TaskContext}
 
+import scala.annotation.meta.param
 import scala.collection._
 import scala.collection.convert.decorateAsScala._
 import scala.collection.mutable.ArrayBuffer
@@ -89,8 +90,8 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
   override def toString = super.toString + s",$family,$qualifier"
 }
 
-private[hbase] class HBaseCatalog(@transient sqlContext: SQLContext,
-                                  @transient configuration: Configuration)
+private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
+                                  @(transient @param) configuration: Configuration)
   extends ExternalCatalog with Logging with Serializable {
 
   @transient

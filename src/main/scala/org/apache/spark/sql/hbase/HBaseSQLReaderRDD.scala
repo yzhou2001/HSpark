@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.{AtomicType, DataType}
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.catalyst.InternalRow
 
+import scala.annotation.meta.param
 import scala.collection.mutable.ArrayBuffer
 
 object CoprocessorConstants {
@@ -64,8 +65,8 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         subplan: Option[SparkPlan],
                         dummyRDD: DummyRDD,
                         val deploySuccessfully: Option[Boolean],
-                        @transient val filterPred: Option[Expression],
-                        @transient sqlContext: SQLContext)
+                        @(transient @param) val filterPred: Option[Expression],
+                        @(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, MutableRow) => MutableRow = if (hasSubPlan) {
@@ -374,7 +375,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   }
 }
 
-private[hbase] class DummyRDD(@transient sqlContext: SQLContext)
+private[hbase] class DummyRDD(@(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) {
 
   @transient var result: Iterator[InternalRow] = _

@@ -20,10 +20,12 @@ package org.apache.spark.sql.hbase
 import org.apache.spark._
 import org.apache.spark.rdd.{RDD, ShuffledRDD, ShuffledRDDPartition}
 
+import scala.annotation.meta.param
+
 class HBaseShuffledRDD (
     prevRdd: RDD[(HBaseRawType, Array[HBaseRawType])],
     part: Partitioner,
-    @transient hbPartitions: Seq[HBasePartition] = Nil) extends ShuffledRDD(prevRdd, part){
+    @(transient @param) hbPartitions: Seq[HBasePartition] = Nil) extends ShuffledRDD(prevRdd, part){
 
   override def getPartitions: Array[Partition] = {
     if (hbPartitions==null || hbPartitions.isEmpty) {

@@ -18,11 +18,12 @@ package org.apache.spark.sql.hbase.types
 
 import org.apache.spark.sql.types._
 
+import scala.annotation.meta.getter
 import scala.reflect.runtime.universe.TypeTag
 
 abstract class PartialOrderingDataType extends DataType {
   private[sql] type InternalType
   def toPartiallyOrderingDataType(s: Any, dt: AtomicType): InternalType
-  @transient private[sql] val tag: TypeTag[InternalType]
+  @(transient @getter) private[sql] val tag: TypeTag[InternalType]
   private[sql] val partialOrdering: PartialOrdering[InternalType]
 }

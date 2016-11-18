@@ -23,14 +23,16 @@ import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperation
 import org.apache.spark.sql.hbase.types.{HBaseBytesType, Range}
 import org.apache.spark.Partition
 
+import scala.annotation.meta.param
+
 private[hbase] class HBasePartition(
                                      val idx: Int, val mappedIndex: Int,
                                      start: Option[HBaseRawType] = None,
                                      end: Option[HBaseRawType] = None,
                                      val server: Option[String] = None,
                                      val filterPredicates: Option[Expression] = None,
-                                     @transient relation: HBaseRelation = null,
-                                     @transient val newScanner:RegionScanner = null)
+                                     @(transient @param) relation: HBaseRelation = null,
+                                     @(transient @param) val newScanner:RegionScanner = null)
   extends Range[HBaseRawType](start, true, end, false, HBaseBytesType)
   with Partition with IndexMappable with Logging {
 
