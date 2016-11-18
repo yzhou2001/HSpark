@@ -36,6 +36,6 @@ private[hbase] class HBaseSQLConf extends SQLConf {
   /** The expiration of cached partition (i.e., region) info; defaults to 10 minutes . */
   private[hbase] def partitionExpiration: Long = getConfString(PARTITION_EXPIRATION, "600").toLong
   private[hbase] def scannerFetchSize: Int = getConfString(SCANNER_FETCH_SIZE, "1000").toInt
-  private[hbase] def useCoprocessor: Boolean = getConfString(USE_COPROCESSOR, "true").toBoolean
+  private[hbase] def useCoprocessor: Boolean = getConfString(USE_COPROCESSOR, "false").toBoolean
   private[hbase] def useCustomFilter: Boolean = getConfString(USE_CUSTOMFILTER, "true").toBoolean
 }

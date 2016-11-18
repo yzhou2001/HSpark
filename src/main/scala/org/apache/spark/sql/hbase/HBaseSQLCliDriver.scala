@@ -17,116 +17,120 @@
 
 package org.apache.spark.sql.hbase
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
-import jline._
+import jline.console.completer.{Completer, StringsCompleter}
+import jline.console.ConsoleReader
+import jline.console.history.FileHistory
 import org.apache.spark.internal.Logging
 import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.mutable.ArrayBuffer
+import collection.JavaConverters._
 
 /**
  * HBaseSQLCliDriver
  *
  */
 object HBaseSQLCliDriver extends Logging {
-  private val prompt = "hspark"
-  private val continuedPrompt = "".padTo(prompt.length, ' ')
-  private val conf = new SparkConf()
-  private val sc = new SparkContext(conf)
+  private val prompt = "hspark> "
+  private val conf = new SparkConf(true).set("spark.hadoop.hbase.zookeeper.quorum", "localhost")
+  private val sc = new SparkContext("local[2]", "hspark", conf)
   private val hbaseCtx = new HBaseSparkSession(sc)
 
   private val QUIT = "QUIT"
   private val EXIT = "EXIT"
   private val HELP = "HELP"
+  private val KEYS = ""
+  private val KEYWORDS = {
+    val upper = Seq (QUIT, EXIT, HELP)
+    val lower = upper.map (_.toLowerCase())
+    Seq.concat(upper, lower)
+  }
 
-  def getCompletors: Seq[Completor] = {
-    val sc: SimpleCompletor = new SimpleCompletor(new Array[String](0))
-    Seq(sc)
+  def getCompleters: Seq[Completer] = {
+    val completers = ArrayBuffer[Completer]()
+    val stringCompleter: StringsCompleter = new StringsCompleter(KEYWORDS.asJava)
+    completers.append(stringCompleter)
+    completers
   }
 
   def main(args: Array[String]) {
-
-    val reader = new ConsoleReader()
-    reader.setBellEnabled(false)
-    getCompletors.foreach(reader.addCompletor)
-
-    val historyDirectory = System.getProperty("user.home")
-
     try {
-      if (new File(historyDirectory).exists()) {
-        val historyFile = historyDirectory + File.separator + ".hbaseqlhistory"
-        reader.setHistory(new History(new File(historyFile)))
-      } else {
-        System.err.println("WARNING: Directory for hbaseql history file: " + historyDirectory +
-          " does not exist.   History will not be available during this session.")
+      val reader = new ConsoleReader()
+      reader.setPrompt(prompt)
+
+      // set the completers
+      getCompleters.foreach(reader.addCompleter)
+      val out = new PrintWriter(reader.getOutput)
+
+      // set history
+      val historyDirectory = System.getProperty("user.home")
+      try {
+        if (new File(historyDirectory).exists()) {
+          val historyFile = historyDirectory + File.separator + ".hsparkhistory"
+          reader.setHistory(new FileHistory(new File(historyFile)))
+        } else {
+          System.err.println("WARNING: Directory for hspark history file: " + historyDirectory +
+            " does not exist.   History will not be available during this session.")
+        }
+      } catch {
+        case e: Exception =>
+          System.err.println("WARNING: Encountered an error while trying to initialize hspark's " +
+            "history file.  History will not be available during this session.")
+          System.err.println(e.getMessage)
+      }
+
+      var break = false
+      while (!break) {
+        val line = reader.readLine
+        if (line == null) {
+          break = true
+        } else {
+          break = process(line, out)
+        }
       }
     } catch {
-      case e: Exception =>
-        System.err.println("WARNING: Encountered an error while trying to initialize hbaseql's " +
-          "history file.  History will not be available during this session.")
-        System.err.println(e.getMessage)
-    }
-
-    println("Welcome to hbaseql CLI")
-    var prefix = ""
-
-    def promptPrefix = s"$prompt"
-    var currentPrompt = promptPrefix
-    var line = reader.readLine(currentPrompt + "> ")
-    var ret = 0
-
-    while (line != null) {
-      if (prefix.nonEmpty) {
-        prefix += '\n'
-      }
-
-      if (line.trim.endsWith(";") && !line.trim.endsWith("\\;")) {
-        line = prefix + line
-        processLine(line, allowInterrupting = true)
-        prefix = ""
-        currentPrompt = promptPrefix
-      } else {
-        prefix = prefix + line
-        currentPrompt = continuedPrompt
-      }
-
-      line = reader.readLine(currentPrompt + "> ")
-    }
-
-    System.exit(0)
-  }
-
-  private def processLine(line: String, allowInterrupting: Boolean) = {
-
-    // TODO: handle multiple command separated by ;
-
-    // Since we are using SqlParser and it does not handle ';', just work around to omit the ';'
-    val input = line.substring(0, line.length - 1)
-
-    try {
-      process(input.trim())
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
+      case t: Throwable => t.printStackTrace()
     }
   }
 
-  private def process(input: String) = {
-    val token = input.split("\\s")
+  /**
+   * process the line
+   * @param input the user input
+   * @param out the output writer
+   * @return true if user wants to terminate; otherwise return false
+   */
+  private def process(input: String, out: PrintWriter): Boolean = {
+    var line = input.trim
+    if (line.length == 0) return false
+    if (line.endsWith(";")) {
+      line = line.substring(0, line.length - 1)
+    }
+    val token = line.split("\\s")
     token(0).toUpperCase match {
-      case QUIT => System.exit(0)
-      case EXIT => System.exit(0)
-      case HELP => printHelp(token)
+      case QUIT => true
+      case EXIT => true
+      case HELP => printHelp(token); false
       case "!" => // TODO: add support for bash command start with !
+        false
       case _ =>
-        logInfo(s"Processing $input")
-        val start = System.currentTimeMillis()
-        val df = hbaseCtx.sql(input)
-        val str = df.showString(Integer.MAX_VALUE)
-        val end = System.currentTimeMillis()
-        println("OK")
-        if (!str.equals("++\n||\n++\n++\n")) println(str)
-        val timeTaken: Double = (end - start) / 1000.0
-        println(s"Time taken: $timeTaken seconds")
+        try {
+          logInfo(s"Processing $line")
+          val start = System.currentTimeMillis()
+          val df = hbaseCtx.sql(line)
+          val str = df.showString(Integer.MAX_VALUE - 1)
+          val end = System.currentTimeMillis()
+          out.println("OK")
+          if (!str.equals("++\n||\n++\n++\n")) out.println(str)
+          val timeTaken: Double = (end - start) / 1000.0
+          out.println(s"Time taken: $timeTaken seconds")
+          false
+        } catch {
+          case e: Exception =>
+            e.printStackTrace(out)
+            false
+        }
     }
   }
 
@@ -134,16 +138,19 @@ object HBaseSQLCliDriver extends Logging {
     if (token.length > 1) {
       token(1).toUpperCase match {
         case "CREATE" =>
-          println( """CREATE TABLE table_name (col_name data_type, ..., PRIMARY KEY(col_name, ...))
-                MAPPED BY (htable_name, COLS=[col_name=family_name.qualifier])""".stripMargin)
+          println( """CREATE TABLE table_name TBLPROPERTIES(
+                      |'hbaseTableName'='hbase_table_name',
+                      |'colsSeq'='col_name,...,col_name',
+                      |'keyCols'='col_name,data_type;...,col_name,data_type',
+                      |'nonKeyCols'='col_name,data_type,column_family,qualifier;...,col_name,data_type,column_family,qualifier')"""
+            .stripMargin)
         case "DROP" =>
           println("DROP TABLE table_name")
         case "ALTER" =>
           println("ALTER TABLE table_name ADD (col_name data_type, ...) MAPPED BY (expression)")
           println("ALTER TABLE table_name DROP col_name")
         case "LOAD" =>
-          println( """LOAD DATA [LOCAL] INPATH file_path [OVERWRITE] INTO TABLE
-                table_name [FIELDS TERMINATED BY char]""".stripMargin)
+          println( """LOAD DATA INPATH file_path INTO TABLE table_name""".stripMargin)
         case "SELECT" =>
           println( """SELECT [ALL | DISTINCT] select_expr, select_expr, ...
                      |FROM table_reference

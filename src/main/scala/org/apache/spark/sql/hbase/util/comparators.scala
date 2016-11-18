@@ -48,7 +48,6 @@ object IntComparator {
   /**
    * @param pbBytes A pb serialized { @link IntComparator} instance
    * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): IntComparator = {
@@ -73,9 +72,8 @@ class IntComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object ByteComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link ByteComparator} instance
+   * @return An instance of { @link ByteComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): ByteComparator = {
@@ -100,9 +98,8 @@ class ByteComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object ShortComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link ShortComparator} instance
+   * @return An instance of { @link ShortComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): ShortComparator = {
@@ -127,9 +124,8 @@ class ShortComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object LongComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link LongComparator} instance
+   * @return An instance of { @link LongComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): LongComparator = {
@@ -157,9 +153,8 @@ class LongComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object DoubleComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link DoubleComparator} instance
+   * @return An instance of { @link DoubleComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): DoubleComparator = {
@@ -187,9 +182,8 @@ class DoubleComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object FloatComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link FloatComparator} instance
+   * @return An instance of { @link FloatComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): FloatComparator = {
@@ -217,9 +211,8 @@ class FloatComparator(value: Array[Byte]) extends CustomComparator(value) {
 
 object BoolComparator {
   /**
-   * @param pbBytes A pb serialized { @link IntComparator} instance
-   * @return An instance of { @link IntComparator} made from <code>bytes</code>
-   * @throws DeserializationException exception
+   * @param pbBytes A pb serialized { @link BoolComparator} instance
+   * @return An instance of { @link BoolComparator} made from <code>bytes</code>
    * @see #toByteArray
    */
   def parseFrom(pbBytes: Array[Byte]): BoolComparator = {

@@ -84,6 +84,8 @@
     <commons.math3.version>3.4.1</commons.math3.version>
     <codehaus.jackson.version>1.9.13</codehaus.jackson.version>
     <jetty.version>9.2.16.v20160414</jetty.version>
+    <jline.version>2.12.1</jline.version>
+    <guava.version>14.0.1</guava.version>
 
     <test_classpath_file>${project.build.directory}/spark-test-classpath.txt</test_classpath_file>
     <!--
@@ -157,13 +159,12 @@
     <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
-      <version>0.9.94</version>
+      <version>${jline.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
-      <scope>provided</scope>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
