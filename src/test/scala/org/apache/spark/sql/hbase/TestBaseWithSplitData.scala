@@ -23,10 +23,10 @@ import java.util.concurrent.Executors
 import org.apache.hadoop.hbase._
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, HBaseKVHelper}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.Row
 
 /**
  * HBaseMainTest
@@ -92,7 +92,7 @@ class TestBaseWithSplitData extends TestBase {
 
     runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
                 'hbaseTableName'='$HbaseTableName',
-                'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
+                'cols'='col1,col2,col3,col4,col5,col6,col7',
                 'keyCols'='col7,INT;col1,STRING;col3,SHORT',
                 'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
 

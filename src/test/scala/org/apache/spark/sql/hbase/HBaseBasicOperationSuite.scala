@@ -40,7 +40,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Insert Into table in StringFormat") {
     sql( """CREATE TABLE tb0 TBLPROPERTIES(
         'hbaseTableName'='default.ht0',
-        'colsSeq'='column2,column1,column4,column3',
+        'cols'='column2,column1,column4,column3',
         'keyCols'='column1,INTEGER',
         'nonKeyCols'='column2,INTEGER,family0,qualifier0;column3,ShORT,family1,qualifier1;column4,FLOAT,family2,qualifier2')""")
 
@@ -58,7 +58,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Insert and Query Single Row") {
     sql( """CREATE TABLE tb1 TBLPROPERTIES(
         'hbaseTableName'='ht1',
-        'colsSeq'='column1,column2',
+        'cols'='column1,column2',
         'keyCols'='column1,INTEGER',
         'nonKeyCols'='column2,STRING,cf,cq')"""
     )
@@ -80,7 +80,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Insert and Query Single Row in StringFormat") {
     sql( """CREATE TABLE tb1 TBLPROPERTIES(
         'hbaseTableName'='ht2',
-        'colsSeq'='col1,col2,col3,col4,col5,col6,col7',
+        'cols'='col1,col2,col3,col4,col5,col6,col7',
         'keyCols'='col1,STRING',
         'nonKeyCols'='col2,BOOLEAN,cf1,cq11;col3,SHORT,cf1,cq12;col4,INTEGER,cf1,cq13;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq22;col7,DOUBLE,cf2,cq23')""".stripMargin
     )
@@ -126,7 +126,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   test("Point Aggregate Query") {
     sql( """CREATE TABLE tb2 TBLPROPERTIES(
         'hbaseTableName'='default.ht0',
-        'colsSeq'='column2,column1,column4,column3',
+        'cols'='column2,column1,column4,column3',
         'keyCols'='column1,INTEGER;column2,INTEGER',
         'nonKeyCols'='column3,SHORT,family1,qualifier1;column4,FLOAT,family2,qualifier2')"""
     )

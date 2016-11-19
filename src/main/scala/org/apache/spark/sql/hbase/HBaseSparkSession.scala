@@ -23,13 +23,12 @@ import org.apache.spark.api.java.JavaSparkContext
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
-import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.rules.RuleExecutor
 import org.apache.spark.sql.execution.datasources.{DataSourceAnalysis, FindDataSourceTable, PreprocessTableInsertion, ResolveDataSource}
-import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, SparkSqlParser, datasources}
+import org.apache.spark.sql.execution.exchange.EnsureRequirements
+import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, datasources}
 import org.apache.spark.sql.hbase.execution.{HBaseSourceAnalysis, HBaseStrategies}
 import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
-import org.apache.spark.sql.execution.exchange.EnsureRequirements
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   self =>

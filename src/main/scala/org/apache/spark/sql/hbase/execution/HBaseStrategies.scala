@@ -18,17 +18,16 @@
 package org.apache.spark.sql.hbase.execution
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.catalog.SimpleCatalogRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.{CatalystConf, InternalRow}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
-import org.apache.spark.sql.hbase.{HBaseCatalog, HBaseRelation, KeyColumn, NonKeyColumn}
-import org.apache.spark.sql.catalyst.{CatalystConf, InternalRow}
-import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.{SparkSession, Strategy}
-import org.apache.spark.sql.catalyst.catalog.SimpleCatalogRelation
-import org.apache.spark.sql.hbase.util.DataTypeUtils
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
@@ -232,9 +231,10 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case s: SimpleCatalogRelation =>
       val properties = s.metadata.properties
-      if (properties.contains("provider") && properties("provider") == "hbase") {
-        val namespace = properties("db")
-        val table = properties("table")
+      if (properties.contains(HBaseSQLConf.PROVIDER) &&
+        properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
+        val namespace = properties(HBaseSQLConf.NAMESPACE)
+        val table = properties(HBaseSQLConf.TABLE)
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
           session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
@@ -247,9 +247,10 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
       }
     case insert@InsertIntoTable(s: SimpleCatalogRelation, p, c, o, i) =>
       val properties = s.metadata.properties
-      if (properties.contains("provider") && properties("provider") == "hbase") {
-        val namespace = properties("db")
-        val table = properties("table")
+      if (properties.contains(HBaseSQLConf.PROVIDER) &&
+        properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
+        val namespace = properties(HBaseSQLConf.NAMESPACE)
+        val table = properties(HBaseSQLConf.TABLE)
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
           val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]

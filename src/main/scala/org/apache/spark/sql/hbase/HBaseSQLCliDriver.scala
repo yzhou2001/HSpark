@@ -19,14 +19,14 @@ package org.apache.spark.sql.hbase
 
 import java.io.{File, PrintWriter}
 
-import jline.console.completer.{Completer, FileNameCompleter, StringsCompleter}
 import jline.console.ConsoleReader
+import jline.console.completer.{Completer, FileNameCompleter, StringsCompleter}
 import jline.console.history.FileHistory
 import org.apache.spark.internal.Logging
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import collection.JavaConverters._
 
 /**
  * HBaseSQLCliDriver
@@ -45,7 +45,8 @@ object HBaseSQLCliDriver extends Logging {
   private val KEYWORDS = {
     val upper = KEYS.split(" ")
     val lower = upper.map (_.toLowerCase())
-    val extra = Seq ("hbaseTableName", "colsSeq", "keyCols", "nonKeyCols")
+    val extra = Seq (HBaseSQLConf.HBASE_TABLENAME, HBaseSQLConf.NAMESPACE, HBaseSQLConf.COLS,
+      HBaseSQLConf.KEY_COLS, HBaseSQLConf.NONKEY_COLS, HBaseSQLConf.ENCODING_FORMAT)
     Seq.concat(upper, lower, extra)
   }
 
@@ -146,7 +147,7 @@ object HBaseSQLCliDriver extends Logging {
         case "CREATE" =>
           println( """CREATE TABLE table_name TBLPROPERTIES(
                       |'hbaseTableName'='hbase_table_name',
-                      |'colsSeq'='col_name,...,col_name',
+                      |'cols'='col_name,...,col_name',
                       |'keyCols'='col_name,data_type;...,col_name,data_type',
                       |'nonKeyCols'='col_name,data_type,column_family,qualifier;...,col_name,data_type,column_family,qualifier')"""
             .stripMargin)

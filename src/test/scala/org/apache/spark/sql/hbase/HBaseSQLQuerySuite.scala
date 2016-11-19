@@ -21,8 +21,8 @@ import java.util.TimeZone
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.hbase.TestData._
-import org.apache.spark.sql.types._
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.types._
 
 class HBaseSQLQuerySuite extends TestBaseWithSplitData {
   // Make sure the tables are loaded.

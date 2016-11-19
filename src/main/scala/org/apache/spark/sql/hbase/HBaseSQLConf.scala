@@ -24,6 +24,16 @@ object HBaseSQLConf {
   val SCANNER_FETCH_SIZE = "spark.sql.hbase.scanner.fetchsize"
   val USE_COPROCESSOR = "spark.sql.hbase.coprocessor"
   val USE_CUSTOMFILTER = "spark.sql.hbase.customfilter"
+
+  val TABLE = "table"
+  val NAMESPACE = "namespace"
+  val PROVIDER = "provider"
+  val HBASE = "hbase"
+  val COLS = "cols"
+  val KEY_COLS = "keyCols"
+  val NONKEY_COLS = "nonKeyCols"
+  val HBASE_TABLENAME = "hbaseTableName"
+  val ENCODING_FORMAT = "encodingFormat"
 }
 
 /**

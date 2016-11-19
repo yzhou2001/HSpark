@@ -25,7 +25,7 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
   test("Insert all rows to the table from other table") {
     val createQuery = s"""CREATE TABLE insertTestTable TBLPROPERTIES(
                       'hbaseTableName'='hinsertTestTable',
-                      'colsSeq'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
+                      'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
                       'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
                       'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')"""
       .stripMargin
@@ -50,7 +50,7 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
   test("Insert few rows to the table from other table after applying filter") {
     val createQuery = s"""CREATE TABLE insertTestTableFilter TBLPROPERTIES(
                       'hbaseTableName'='hinsertTestTableFilter',
-                      'colsSeq'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
+                      'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
                       'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
                       'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')""".stripMargin
       .stripMargin
@@ -84,7 +84,7 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
   test("Insert few columns to the table from other table") {
     val createQuery = s"""CREATE TABLE insertTestTableFewCols TBLPROPERTIES(
                       'hbaseTableName'='insertTestTableFewCols',
-                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'cols'='strcol,bytecol,shortcol,intcol',
                       'keyCols'='strcol,STRING;intcol,INTEGER',
                       'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
       .stripMargin
@@ -112,7 +112,7 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
   test("Insert into values test") {
     val createQuery = s"""CREATE TABLE insertValuesTest TBLPROPERTIES(
                       'hbaseTableName'='hinsertValuesTest',
-                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'cols'='strcol,bytecol,shortcol,intcol',
                       'keyCols'='strcol,STRING;intcol,INTEGER',
                       'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
       .stripMargin
@@ -146,7 +146,7 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
   test("Insert nullable values test") {
     val createQuery = s"""CREATE TABLE insertNullValuesTest TBLPROPERTIES(
                       'hbaseTableName'='hinsertNullValuesTest',
-                      'colsSeq'='strcol,bytecol,shortcol,intcol',
+                      'cols'='strcol,bytecol,shortcol,intcol',
                       'keyCols'='strcol,STRING',
                       'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;intcol,INTEGER,cf1,hintcol')"""
       .stripMargin

@@ -23,7 +23,7 @@ import org.apache.hadoop.hbase.exceptions.DeserializationException
 import org.apache.hadoop.hbase.filter.Filter.ReturnCode
 import org.apache.hadoop.hbase.filter.FilterBase
 import org.apache.hadoop.hbase.util.{Bytes, Writables}
-import org.apache.hadoop.hbase.{HConstants, Cell, CellUtil, KeyValue}
+import org.apache.hadoop.hbase.{Cell, CellUtil, HConstants, KeyValue}
 import org.apache.hadoop.io.Writable
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations._

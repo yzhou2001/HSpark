@@ -161,8 +161,8 @@ private[hbase] class RangeType[T] extends PartialOrderingDataType {
 }
 
 object RangeType {
-  import scala.reflect.runtime.universe.TypeTag
   import scala.collection.JavaConverters._
+  import scala.reflect.runtime.universe.TypeTag
   private val typeMap = new ConcurrentHashMap[TypeTag[_], RangeType[_]].asScala
 
   implicit class partialOrdering(dt: AtomicType) {

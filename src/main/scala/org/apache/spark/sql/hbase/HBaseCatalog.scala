@@ -32,10 +32,10 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding
 import org.apache.hadoop.hbase.ipc.BlockingRpcCallback
 import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat2, LoadIncrementalHFiles}
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.mapred.{JobConf, TaskID}
+import org.apache.hadoop.mapred.TaskID
+import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.hadoop.mapreduce._
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
@@ -301,15 +301,15 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
       throw new Exception(s"Logical table name is not defined")
     }
     val hbaseNamespace = tableDefinition.identifier.database.orNull
-    val hbaseTableName = tableDefinition.properties.getOrElse("hbaseTableName", null)
+    val hbaseTableName = tableDefinition.properties.getOrElse(HBaseSQLConf.HBASE_TABLENAME, null)
     if (hbaseTableName == null) {
       throw new Exception(s"HBase table name is not defined")
     }
-    val encodingFormat = tableDefinition.properties.getOrElse("encodingFormat", BinaryBytesUtils.name)
-    val colsSeq = tableDefinition.properties.getOrElse("colsSeq", "").split(",")
-    val keyCols = tableDefinition.properties.getOrElse("keyCols", "").split(";")
+    val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
+    val colsSeq = tableDefinition.properties.getOrElse(HBaseSQLConf.COLS, "").split(",")
+    val keyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "").split(";")
       .map { c => val cols = c.split(","); (cols(0), cols(1)) }
-    val nonKeyCols = tableDefinition.properties.getOrElse("nonKeyCols", "").split(";")
+    val nonKeyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
       .filterNot(_ == "")
       .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
 
@@ -376,38 +376,12 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
 
       val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
         CatalogStorageFormat.empty, schema,
-        properties = immutable.Map("provider" -> "hbase", "db" -> namespace, "table" -> table))
+        properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE,
+          HBaseSQLConf.NAMESPACE -> namespace, HBaseSQLConf.TABLE -> table))
       catalogTable
-    } else
-  {
-    null
-  }
-
-
-//    val relation = getTable(table)
-//    if (relation.isDefined) {
-//      val identifier = TableIdentifier(relation.get.tableName, Some(db))
-//
-//      // pass in the hbase information
-//      var hbaseProperties = collection.immutable.Map[String, String]()
-//      hbaseProperties += ("tableName" -> relation.get.tableName)
-//      if (relation.get.hbaseNamespace != null) {
-//        hbaseProperties += ("namespace" -> relation.get.hbaseNamespace)
-//      }
-//      hbaseProperties += ("hbaseTableName" -> relation.get.hbaseTableName)
-//      hbaseProperties += ("allColumns" -> relation.get.allColumns.map(_.toString).mkString(";"))
-//      if (relation.get.deploySuccessfully.isDefined) {
-//        hbaseProperties += ("deploySuccessfully" -> relation.get.deploySuccessfully.get.toString)
-//      }
-//      hbaseProperties += ("hasCoprocessor" -> relation.get.hasCoprocessor.toString)
-//      hbaseProperties += ("encodingFormat" -> relation.get.encodingFormat)
-//
-//      val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
-//        CatalogStorageFormat.empty, Seq.empty, properties = hbaseProperties)
-//      catalogTable
-//    } else {
-//      null
-//    }
+    } else {
+      null
+    }
   }
 
   override def getTableOption(db: String, table: String): Option[CatalogTable] = {

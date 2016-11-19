@@ -21,9 +21,8 @@ import org.apache.hadoop.hbase.TableName
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.hbase.util.HBaseKVHelper
-import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.types._
 
 class HBaseAdditionalQuerySuite extends TestBase {
 
@@ -60,7 +59,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
     val sql =
       s"""CREATE TABLE testblk TBLPROPERTIES('hbaseTableName'='presplit_table',
-           'colsSeq'='col1,col2,col3,col4',
+           'cols'='col1,col2,col3,col4',
            'keyCols'='col1,INT;col2,STRING;col3,INT',
            'nonKeyCols'='col4,STRING,cf,a')"""
         .stripMargin
@@ -76,7 +75,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
   def createTableTeacher(useCoprocessor: Boolean = true) = {
     val sql =
       s"""CREATE TABLE spark_teacher_3key TBLPROPERTIES('hbaseTableName'='teacher',
-           'colsSeq'='grade,class,subject,teacher_name,teacher_age',
+           'cols'='grade,class,subject,teacher_name,teacher_age',
            'keyCols'='grade,INT;class,INT;subject,STRING',
            'nonKeyCols'='teacher_name,STRING,cf,a;teacher_age,INT,cf,b')"""
         .stripMargin
@@ -90,7 +89,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
   def createTablePeople(useCoprocessor: Boolean = true) = {
     val sql =
       s"""CREATE TABLE spark_people TBLPROPERTIES('hbaseTableName'='people',
-           'colsSeq'='rowNum,people_name,people_age,school_identification,school_director',
+           'cols'='rowNum,people_name,people_age,school_identification,school_director',
            'keyCols'='rowNum,INT',
            'nonKeyCols'='people_name,STRING,cf,a;people_age,INT,cf,b;school_identification,STRING,cf,c;school_director,STRING,cf,d')"""
         .stripMargin

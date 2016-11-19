@@ -17,9 +17,9 @@
 
 package org.apache.spark.sql.hbase
 
-import org.apache.spark.sql.types.{StructType, MetadataBuilder}
-import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.types.{MetadataBuilder, StructType}
+import org.apache.spark.sql.{DataFrame, Row}
 
 class HBaseAdvancedSQLQuerySuite extends TestBaseWithSplitData {
   import org.apache.spark.sql.hbase.TestHbase._

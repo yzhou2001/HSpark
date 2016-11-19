@@ -17,14 +17,15 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Get, Put, Result, Scan, Table}
+import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.filter._
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{HBaseConfiguration, _}
 import org.apache.log4j.Logger
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hbase.catalyst.NotPusher
@@ -33,8 +34,7 @@ import org.apache.spark.sql.hbase.types.Range
 import org.apache.spark.sql.hbase.util._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, RelationProvider}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
@@ -54,7 +54,7 @@ class HBaseSource extends RelationProvider {
     val hbaseNamespace = parameters("namespace")
     val hbaseTableName = parameters("hbaseTableName")
     val encodingFormat = parameters("encodingFormat")
-    val colsSeq = parameters("colsSeq").split(",")
+    val colsSeq = parameters("cols").split(",")
     val keyCols = parameters("keyCols").split(";")
       .map { c => val cols = c.split(","); (cols(0), cols(1)) }
     val nonKeyCols = parameters("nonKeyCols").split(";")
