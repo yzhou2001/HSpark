@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.hbase.api.java;
 
+import java.util.List;
+
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -80,9 +82,8 @@ public class JavaAPISuite extends TestBase implements Serializable {
                 "shortcol,STRING,cf1,hshortcol;longcol,STRING,cf2,hlongcol;floatcol,STRING,cf2,hfloatcol')";
         ss.sql(create_sql).collect();
         ss.sql(insert_sql).collect();
-        org.apache.spark.sql.Dataset<Row> df = ss.sql(retrieve_sql);
-        Row row = df.head();
+        List<Row> rows = ss.sql(retrieve_sql).collectAsList();
 
-        assert (row.toString().equals("[strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol]"));
+        assert (rows.get(0).toString().equals("[strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol]"));
     }
 }
