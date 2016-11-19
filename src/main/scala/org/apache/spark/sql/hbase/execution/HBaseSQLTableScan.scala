@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.plans.physical.RangePartitioning
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.util.Utils
 
 /**
  * :: DeveloperApi ::
@@ -51,5 +52,10 @@ case class HBaseSQLTableScan(
       val proj = UnsafeProjection.create(schema)
       iter.map(proj)
     }
-   }
+  }
+
+  override def nodeName: String = getClass.getSimpleName
+
+  override def argString: String =
+    (Utils.truncatedString(output, "[", ", ", "]") :: Nil).mkString(", ")
 }
