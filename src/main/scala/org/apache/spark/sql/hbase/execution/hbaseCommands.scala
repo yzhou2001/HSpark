@@ -90,7 +90,7 @@ case class DescribeTableCommand(namespace: String, tableName: String) extends Ru
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
     val relation = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-      .getHBaseRelation(namespace, tableName, null)
+      .getHBaseRelation(namespace, tableName)
     if (relation.isDefined) {
       relation.get.allColumns.foreach {
         case keyColumn: KeyColumn =>

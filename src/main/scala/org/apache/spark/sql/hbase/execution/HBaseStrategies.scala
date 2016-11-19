@@ -238,7 +238,7 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
           session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table, null).get.logicalRelation
+            .getHBaseRelation(namespace, table).get.logicalRelation
         } else {
           s
         }
@@ -253,7 +253,7 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
           val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table, null).get.logicalRelation
+            .getHBaseRelation(namespace, table).get.logicalRelation
           insert.copy(table = t)
         } else {
           insert

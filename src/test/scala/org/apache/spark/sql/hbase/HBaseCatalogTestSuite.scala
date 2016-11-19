@@ -70,7 +70,7 @@ class HBaseCatalogTestSuite extends TestBase {
     val tableName = "testTable"
     val hbaseTableName = "hbaseTable"
 
-    val oresult = catalog.getHBaseRelation(hbaseNamespace, tableName, null)
+    val oresult = catalog.getHBaseRelation(hbaseNamespace, tableName)
     assert(oresult.isDefined)
     val result = oresult.get
     assert(result.tableName === tableName)
@@ -105,12 +105,12 @@ class HBaseCatalogTestSuite extends TestBase {
 
     catalog.alterTableAddNonKey(namespace, tableName, column)
 
-    var result = catalog.getHBaseRelation(namespace, tableName, null)
+    var result = catalog.getHBaseRelation(namespace, tableName)
     var table = result.get
     assert(table.allColumns.size === 5)
 
     catalog.alterTableDropNonKey(namespace, tableName, column.sqlName)
-    result = catalog.getHBaseRelation(namespace, tableName, null)
+    result = catalog.getHBaseRelation(namespace, tableName)
     table = result.get
     assert(table.allColumns.size === 4)
     catalog.stopAdmin()

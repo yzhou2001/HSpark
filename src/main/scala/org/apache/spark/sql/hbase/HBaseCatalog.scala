@@ -99,6 +99,10 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
 
   lazy val relationMapCache = new ConcurrentHashMap[String, HBaseRelation].asScala
 
+  private var admin_ : Option[Admin] = None
+
+  private val caseSensitive = sqlContext.conf.caseSensitiveAnalysis
+
   private[sql] def admin: Admin = {
     if (admin_.isEmpty) {
       admin_ = Some(connection.getAdmin)
@@ -106,22 +110,18 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
     admin_.get
   }
 
-  private var admin_ : Option[Admin] = None
-
   private[sql] def stopAdmin(): Unit = {
     admin_.foreach(_.close())
     admin_ = None
   }
 
-  private def processTableName(tableName: String): String = {
+  private def processName(tableName: String): String = {
     if (!caseSensitive) {
       tableName.toLowerCase
     } else {
       tableName
     }
   }
-
-  val caseSensitive = true
 
   protected[hbase] def createHBaseUserTable(tableName: TableName,
                                             families: Set[String],
@@ -292,7 +292,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   private def getCacheMapKey(namespace: String, table: String): String = {
-    s"${processTableName(namespace)}:${processTableName(table)}"
+    s"${processName(namespace)}:${processName(table)}"
   }
 
   override def createTable(db: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
@@ -360,7 +360,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def getTable(namespace: String, table: String): CatalogTable = {
-    val relation = getHBaseRelation(namespace, table, null)
+    val relation = getHBaseRelation(namespace, table)
     if (relation.isDefined) {
       val identifier = TableIdentifier(table, Some(namespace))
 
@@ -786,7 +786,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   def lookupRelation(namespace: String, tableName: String, alias: Option[String] = None): LogicalPlan = {
-    val hbaseRelation = getHBaseRelation(namespace, tableName, null)
+    val hbaseRelation = getHBaseRelation(namespace, tableName)
     stopAdmin()
     if (hbaseRelation.isEmpty) {
       sys.error(s"Table Not Found: $tableName")
