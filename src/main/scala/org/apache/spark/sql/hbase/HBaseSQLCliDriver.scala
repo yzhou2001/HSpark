@@ -125,7 +125,9 @@ object HBaseSQLCliDriver extends Logging {
           logInfo(s"Processing $line")
           val start = System.currentTimeMillis()
           val df = hbaseCtx.sql(line)
-          val str = df.showString(Integer.MAX_VALUE - 1)
+          val str = df.showString(Integer.MAX_VALUE - 1, truncate =
+            if (token(0) == "EXPLAIN") false else true
+          )
           val end = System.currentTimeMillis()
           out.println("OK")
           if (!str.equals("++\n||\n++\n++\n")) out.println(str)
