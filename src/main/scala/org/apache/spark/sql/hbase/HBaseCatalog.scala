@@ -542,10 +542,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         var kv: (HBaseRawType, Array[HBaseRawType]) = null
         var prevK: HBaseRawType = null
         val columnFamilyNames =
-          relation.htable.getTableDescriptor.getColumnFamilies.map(
-            f => {
-              f.getName
-            })
+          relation.htable.getTableDescriptor.getColumnFamilies.map(_.getName)
+
         var isEmptyRow = true
 
         try {
