@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase._
  * This is a mini tpc test suite running against mini-cluster
  */
 class HBaseTpcMiniTestSuite extends TestBase {
+  private val namespace = "default"
   private val tableName = "store_sales"
   private val hbaseTableName = "store_sales_htable"
   private val hbaseFamilies = Seq("f")
@@ -56,7 +57,7 @@ class HBaseTpcMiniTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
+    if (TestHbase.sharedState.externalCatalog.tableExists(namespace, tableName)) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)

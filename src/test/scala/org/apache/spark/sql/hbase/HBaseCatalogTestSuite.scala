@@ -127,9 +127,10 @@ class HBaseCatalogTestSuite extends TestBase {
   }
 
   test("Check Logical Table Exist") {
+    val namespace = "default"
     val tableName = "non-exist"
 
-    assert(catalog.tableExists("", tableName) === false)
+    assert(catalog.tableExists(namespace, tableName) === false)
     catalog.stopAdmin()
   }
 

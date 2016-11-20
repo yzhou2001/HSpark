@@ -24,6 +24,7 @@ import org.apache.hadoop.hbase._
  *
  */
 class TestBaseWithNonSplitData extends TestBase {
+  private val namespace = "default"
   val TestTableName = "TestTable"
   val TestHBaseTableName: String = s"Hb$TestTableName"
   val TestHbaseColFamilies = Seq("cf1", "cf2")
@@ -62,7 +63,7 @@ class TestBaseWithNonSplitData extends TestBase {
       createNativeHbaseTable(hbaseTable, TestHbaseColFamilies)
     }
 
-    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
+    if (TestHbase.sharedState.externalCatalog.tableExists(namespace, tableName)) {
       val dropSql = s"DROP TABLE $tableName"
       runSql(dropSql)
     }

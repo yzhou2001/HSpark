@@ -24,6 +24,7 @@ import org.apache.spark.sql.Row
  * HBase minicluster query test again stringformat tbl.
  */
 class HBaseTpcStringFormatMiniTestSuite extends TestBase {
+  private val namespace = "default"
   private val tableName = "store_sales_stringformat"
   private val hbaseTableName = "STORE_SALES_STRINGFORMAT"
   private val hbaseFamilies = Seq("f")
@@ -57,7 +58,7 @@ class HBaseTpcStringFormatMiniTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.sharedState.externalCatalog.tableExists("", tableName)) {
+    if (TestHbase.sharedState.externalCatalog.tableExists(namespace, tableName)) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)

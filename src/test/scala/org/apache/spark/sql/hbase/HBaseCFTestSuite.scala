@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase._
  * This is a custom filter test suite running against mini-cluster
  */
 class HBaseCFTestSuite extends TestBase {
+  private val namespace = "default"
   private val tableName = "cf"
   private val hbaseTableName = "cf_htable"
   private val hbaseFamilies = Seq("f")
@@ -40,7 +41,7 @@ class HBaseCFTestSuite extends TestBase {
      * create hbase table if it does not exists
      */
     super.beforeAll()
-    if (!TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists("", hbaseTableName)) {
+    if (!TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists(namespace, hbaseTableName)) {
       val descriptor = new HTableDescriptor(TableName.valueOf(tableName))
       hbaseFamilies.foreach { f => descriptor.addFamily(new HColumnDescriptor(f))}
       try {
@@ -56,7 +57,7 @@ class HBaseCFTestSuite extends TestBase {
     /**
      * drop the existing logical table if it exists
      */
-    if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists("", tableName)) {
+    if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists(namespace, tableName)) {
       val dropSql = "DROP TABLE " + tableName
       try {
         runSql(dropSql)

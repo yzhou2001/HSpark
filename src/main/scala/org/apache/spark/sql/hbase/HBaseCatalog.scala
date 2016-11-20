@@ -38,7 +38,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
+import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
@@ -54,9 +54,9 @@ import org.apache.spark.{SparkEnv, SparkException, SparkHadoopWriter, TaskContex
 
 import scala.annotation.meta.param
 import scala.collection._
-import scala.collection.convert.decorateAsScala._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /**
  * Column represent the sql column
@@ -92,8 +92,8 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
   override def toString = super.toString + s",$family,$qualifier"
 }
 
-private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
-                                  @(transient @param) configuration: Configuration)
+private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
+                                  @(transient@param) configuration: Configuration)
   extends ExternalCatalog with Logging with Serializable {
 
   @transient
@@ -185,7 +185,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
         if (!pwdIsAccessible) {
           logWarning(
             """The directory of a certain regionserver is not accessible,
-            |please add 'cd ~' before 'start regionserver' in your regionserver start script.""")
+              |please add 'cd ~' before 'start regionserver' in your regionserver start script.""")
         }
         metadataTable.close()
       } else {
@@ -196,18 +196,28 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {
-    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != dbDefinition.name &&
-      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != dbDefinition.name) {
-      admin.createNamespace(NamespaceDescriptor.create(dbDefinition.name)
-        .addConfiguration(mapAsJavaMap(dbDefinition.properties)).build())
+    val db = dbDefinition.name
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != db &&
+      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != db) {
+
+      if (admin.listNamespaceDescriptors().exists(_.getName == db)) {
+        if (!ignoreIfExists) {
+          throw new DatabaseAlreadyExistsException(dbDefinition.name)
+        }
+      } else {
+        admin.createNamespace(NamespaceDescriptor.create(db)
+          .addConfiguration(mapAsJavaMap(dbDefinition.properties)).build())
+      }
+      stopAdmin()
+    } else {
+      logInfo(s"Cannot create default namespace or system namespace: $db")
     }
   }
 
   override def dropDatabase(db: String, ignoreIfNotExists: Boolean, cascade: Boolean): Unit = {
     if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName == db ||
       NamespaceDescriptor.SYSTEM_NAMESPACE.getName == db) {
-      throw new Exception(s"Cannot drop default namespace or system namespace: $db")
-      //admin.deleteNamespace(db)
+      throw new SparkException(s"Cannot drop default namespace or system namespace: $db")
     }
 
     val namespace = admin.getNamespaceDescriptor(db)
@@ -243,26 +253,26 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def alterDatabase(dbDefinition: CatalogDatabase): Unit = {
-    throw new UnsupportedOperationException("alterDatabase is not implemented")
+    throw new UnsupportedOperationException("Alter database is not implemented")
   }
 
   override def getDatabase(db: String): CatalogDatabase = {
-    import scala.collection.JavaConverters._
-
+    requireDbExists(db)
     val namespace = admin.getNamespaceDescriptor(db)
-    if (namespace != null) {
-      CatalogDatabase(namespace.getName, "", "", namespace.getConfiguration.asScala.toMap)
-    } else {
-      null
-    }
+    stopAdmin()
+    CatalogDatabase(namespace.getName, "", "", namespace.getConfiguration.asScala.toMap)
   }
 
   override def databaseExists(db: String): Boolean = {
-    admin.getNamespaceDescriptor(db) != null
+    val result = admin.getNamespaceDescriptor(db) != null
+    stopAdmin()
+    result
   }
 
   override def listDatabases(): Seq[String] = {
-    admin.listNamespaceDescriptors().map(_.getName)
+    val result = admin.listNamespaceDescriptors().map(_.getName).sorted
+    stopAdmin()
+    result
   }
 
   override def listDatabases(pattern: String): Seq[String] = {
@@ -282,184 +292,187 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   def createTable(tableName: String, hbaseNamespace: String, hbaseTableName: String,
                   allColumns: Seq[AbstractColumn], splitKeys: Array[Array[Byte]],
                   encodingFormat: String = BinaryBytesUtils.name): HBaseRelation = {
-    try {
-      val metadataTable = getMetadataTable
+    val metadataTable = getMetadataTable
 
-      if (checkLogicalTableExist(hbaseNamespace, tableName, metadataTable)) {
-        throw new Exception(s"The logical table: $tableName already exists")
-      }
-      // create a new hbase table for the user if not exist
-      val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn])
-        .asInstanceOf[Seq[NonKeyColumn]]
-      val families = nonKeyColumns.map(_.family).toSet
-      val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
-      if (!checkHBaseTableExists(hTableName)) {
-        createHBaseUserTable(hTableName, families, splitKeys,
-          sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
-      } else {
-        families.foreach { family =>
-          if (!checkFamilyExists(hTableName, family)) {
-            throw new Exception(s"HBase table does not contain column family: $family")
-          }
+    if (checkLogicalTableExist(hbaseNamespace, tableName, metadataTable)) {
+      throw new SparkException(s"The logical table: $tableName already exists")
+    }
+    // create a new hbase table for the user if not exist
+    val nonKeyColumns = allColumns.filter(_.isInstanceOf[NonKeyColumn])
+      .asInstanceOf[Seq[NonKeyColumn]]
+    val families = nonKeyColumns.map(_.family).toSet
+    val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
+    if (!checkHBaseTableExists(hTableName)) {
+      createHBaseUserTable(hTableName, families, splitKeys,
+        sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
+    } else {
+      families.foreach { family =>
+        if (!checkFamilyExists(hTableName, family)) {
+          throw new SparkException(s"HBase table does not contain column family: $family")
         }
       }
-
-      val get = new Get(Bytes.toBytes(getCacheMapKey(hbaseNamespace, tableName)))
-      val result = if (metadataTable.exists(get)) {
-        throw new Exception(s"row key $tableName exists")
-      } else {
-        val hbaseRelation = HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
-          allColumns, deploySuccessfully,
-          hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
-          encodingFormat, connection)(sqlContext)
-        hbaseRelation.setConfig(configuration)
-
-        writeObjectToTable(hbaseRelation, metadataTable)
-
-        relationMapCache.put(getCacheMapKey(hbaseNamespace, tableName), hbaseRelation)
-        hbaseRelation
-      }
-      metadataTable.close()
-      result
-    } finally {
-      stopAdmin()
     }
+
+    val get = new Get(Bytes.toBytes(getCacheMapKey(hbaseNamespace, tableName)))
+    val result = if (metadataTable.exists(get)) {
+      throw new SparkException(s"Row key $tableName exists")
+    } else {
+      val hbaseRelation = HBaseRelation(tableName, hbaseNamespace, hbaseTableName,
+        allColumns, deploySuccessfully,
+        hasCoprocessor(TableName.valueOf(hbaseNamespace, hbaseTableName)),
+        encodingFormat, connection)(sqlContext)
+      hbaseRelation.setConfig(configuration)
+
+      writeObjectToTable(hbaseRelation, metadataTable)
+
+      relationMapCache.put(getCacheMapKey(hbaseNamespace, tableName), hbaseRelation)
+      hbaseRelation
+    }
+    metadataTable.close()
+    stopAdmin()
+    result
   }
 
   private def getCacheMapKey(namespace: String, table: String): String = {
     s"${processName(namespace)}:${processName(table)}"
   }
 
-  override def createTable(db: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
-    val tableName = tableDefinition.identifier.table
-    if (tableName == null) {
-      throw new Exception(s"Logical table name is not defined")
-    }
-    val hbaseNamespace = tableDefinition.identifier.database.orNull
-    val hbaseTableName = tableDefinition.properties.getOrElse(HBaseSQLConf.HBASE_TABLENAME, null)
-    if (hbaseTableName == null) {
-      throw new Exception(s"HBase table name is not defined")
-    }
-    val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
-    val colsSeq = tableDefinition.properties.getOrElse(HBaseSQLConf.COLS, "").split(",")
-    val keyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "").split(";")
-      .map { c => val cols = c.split(","); (cols(0), cols(1)) }
-    val nonKeyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
-      .filterNot(_ == "")
-      .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
+  override def createTable(namespace: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
+    requireDbExists(namespace)
+    val table = tableDefinition.identifier.table
+    if (tableExists(namespace, table)) {
+      if (!ignoreIfExists) {
+        throw new TableAlreadyExistsException(db = namespace, table = table)
+      }
+    } else {
+      val hbaseNamespace = tableDefinition.identifier.database.orNull
+      val hbaseTableName = tableDefinition.properties.getOrElse(HBaseSQLConf.HBASE_TABLENAME, null)
+      if (hbaseTableName == null) {
+        throw new SparkException(s"HBase table name is not defined")
+      }
+      val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
+      val colsSeq = tableDefinition.properties.getOrElse(HBaseSQLConf.COLS, "").split(",")
+      val keyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "").split(";")
+        .map { c => val cols = c.split(","); (cols(0), cols(1)) }
+      val nonKeyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
+        .filterNot(_ == "")
+        .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
 
-    val keyMap: Map[String, String] = keyCols.toMap
-    val allColumns = colsSeq.map {
-      name =>
-        if (keyMap.contains(name)) {
-          KeyColumn(
-            name,
-            DataTypeUtils.getDataType(keyMap(name)),
-            keyCols.indexWhere(_._1 == name))
-        } else {
-          val nonKeyCol = nonKeyCols.find(_._1 == name).get
-          NonKeyColumn(
-            name,
-            DataTypeUtils.getDataType(nonKeyCol._2),
-            nonKeyCol._3,
-            nonKeyCol._4
-          )
-        }
-    }.toSeq
+      val keyMap: Map[String, String] = keyCols.toMap
+      val allColumns = colsSeq.map {
+        name =>
+          if (keyMap.contains(name)) {
+            KeyColumn(
+              name,
+              DataTypeUtils.getDataType(keyMap(name)),
+              keyCols.indexWhere(_._1 == name))
+          } else {
+            val nonKeyCol = nonKeyCols.find(_._1 == name).get
+            NonKeyColumn(
+              name,
+              DataTypeUtils.getDataType(nonKeyCol._2),
+              nonKeyCol._3,
+              nonKeyCol._4
+            )
+          }
+      }.toSeq
 
-    createTable(tableName, hbaseNamespace, hbaseTableName, allColumns, null, encodingFormat)
+      createTable(table, hbaseNamespace, hbaseTableName, allColumns, null, encodingFormat)
+    }
   }
 
   override def dropTable(namespace: String, table: String, ignoreIfNotExists: Boolean): Unit = {
-    try {
-      requireDbExists(namespace)
-      if (tableExists(namespace, table)) {
-        val metadataTable = getMetadataTable
-        val delete = new Delete(Bytes.toBytes(getCacheMapKey(namespace, table)))
-        metadataTable.delete(delete)
-        metadataTable.close()
-        relationMapCache.remove(getCacheMapKey(namespace, table))
-      } else {
-        if (!ignoreIfNotExists) {
-          throw new NoSuchTableException(db = namespace, table = table)
-        }
+    requireDbExists(namespace)
+    if (tableExists(namespace, table)) {
+      val metadataTable = getMetadataTable
+      val delete = new Delete(Bytes.toBytes(getCacheMapKey(namespace, table)))
+      metadataTable.delete(delete)
+      metadataTable.close()
+      relationMapCache.remove(getCacheMapKey(namespace, table))
+    } else {
+      if (!ignoreIfNotExists) {
+        throw new NoSuchTableException(db = namespace, table = table)
       }
-    } finally {
-      stopAdmin()
     }
   }
 
-  override def renameTable(db: String, oldName: String, newName: String): Unit = {
-    throw new UnsupportedOperationException("renameTable is not implemented")
+  override def renameTable(namespace: String, oldName: String, newName: String): Unit = {
+    throw new UnsupportedOperationException("Rename table is not implemented")
   }
 
-  override def alterTable(db: String, tableDefinition: CatalogTable): Unit = {
-    throw new UnsupportedOperationException("alterTable is not implemented")
+  override def alterTable(namespace: String, tableDefinition: CatalogTable): Unit = {
+    throw new UnsupportedOperationException("Alter table is not implemented")
+  }
+
+  private def requireTableExists(namespace: String, table: String): Unit = {
+    if (!tableExists(namespace, table)) {
+      throw new NoSuchTableException(db = namespace, table = table)
+    }
   }
 
   override def getTable(namespace: String, table: String): CatalogTable = {
+    requireTableExists(namespace, table)
+
     val relation = getHBaseRelation(namespace, table)
-    if (relation.isDefined) {
-      val identifier = TableIdentifier(table, Some(namespace))
+    val identifier = TableIdentifier(table, Some(namespace))
 
-      // prepare the schema for the table
-      val schema = relation.get.allColumns.map {
-        case k: KeyColumn =>
-          CatalogColumn(k.sqlName, k.dataType.simpleString, nullable = false,
-            comment = Some(s"KEY COLUMNS ${k.order}"))
-        case nk: NonKeyColumn =>
-          CatalogColumn(nk.sqlName, nk.dataType.simpleString, nullable = true,
-            comment = Some(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}"))
-      }
-
-      val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
-        CatalogStorageFormat.empty, schema,
-        properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE,
-          HBaseSQLConf.NAMESPACE -> namespace, HBaseSQLConf.TABLE -> table))
-      catalogTable
-    } else {
-      null
+    // prepare the schema for the table
+    val schema = relation.get.allColumns.map {
+      case k: KeyColumn =>
+        CatalogColumn(k.sqlName, k.dataType.simpleString, nullable = false,
+          comment = Some(s"KEY COLUMNS ${k.order}"))
+      case nk: NonKeyColumn =>
+        CatalogColumn(nk.sqlName, nk.dataType.simpleString, nullable = true,
+          comment = Some(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}"))
     }
+
+    val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
+      CatalogStorageFormat.empty, schema,
+      properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE,
+        HBaseSQLConf.NAMESPACE -> namespace, HBaseSQLConf.TABLE -> table))
+    catalogTable
   }
 
-  override def getTableOption(db: String, table: String): Option[CatalogTable] = {
-    val catalogTable = getTable(db, table)
-    Some(catalogTable)
+  override def getTableOption(namespace: String, table: String): Option[CatalogTable] = {
+    if (!tableExists(namespace, table)) None else Option(getTable(namespace, table))
   }
 
   override def tableExists(namespace: String, table: String): Boolean = {
+    requireDbExists(namespace)
+
     val result = checkLogicalTableExist(namespace, table)
-    stopAdmin()
     result
   }
 
-  override def listTables(db: String): Seq[String] = {
+  override def listTables(namespace: String): Seq[String] = {
+    requireDbExists(namespace)
+
     val metadataTable = getMetadataTable
     val tables = new ArrayBuffer[String]()
     val scanner = metadataTable.getScanner(ColumnFamily)
     var result = scanner.next()
     while (result != null) {
       val relation = getRelationFromResult(result)
-      if (relation.hbaseNamespace == db) {
+      if (relation.hbaseNamespace == namespace) {
         tables.append(relation.tableName)
       }
       result = scanner.next()
     }
     metadataTable.close()
-    tables
+    tables.sorted
   }
 
-  override def listTables(db: String, pattern: String): Seq[String] = {
-    StringUtils.filterPattern(listTables(db), pattern)
+  override def listTables(namespace: String, pattern: String): Seq[String] = {
+    StringUtils.filterPattern(listTables(namespace), pattern)
   }
 
   override def loadTable(
-                 db: String,
-                 table: String,
-                 loadPath: String,
-                 isOverwrite: Boolean,
-                 holdDDLTime: Boolean): Unit = {
-    @transient val solvedRelation = lookupRelation(db, table)
+                          namespace: String,
+                          table: String,
+                          loadPath: String,
+                          isOverwrite: Boolean,
+                          holdDDLTime: Boolean): Unit = {
+    @transient val solvedRelation = lookupRelation(namespace, table)
     @transient val relation: HBaseRelation = solvedRelation.asInstanceOf[SubqueryAlias]
       .child.asInstanceOf[LogicalRelation]
       .relation.asInstanceOf[HBaseRelation]
@@ -476,13 +489,6 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
 
     @transient val conf = job.getConfiguration
 
-//    @transient val hadoopReader = if (isLocal) {
-//      val fs = FileSystem.getLocal(conf)
-//      val pathString = fs.pathToFile(new Path(inputPath)).toURI.toURL.toString
-//      new HadoopReader(sqlContext.sparkContext, pathString, delimiter)(relation)
-//    } else {
-//      new HadoopReader(sparkSession.sparkContext, inputPath, delimiter)(relation)
-//    }
     @transient val hadoopReader = {
       val fs = FileSystem.getLocal(conf)
       val pathString = fs.pathToFile(new Path(loadPath)).toURI.toURL.toString
@@ -537,7 +543,9 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
         var prevK: HBaseRawType = null
         val columnFamilyNames =
           relation.htable.getTableDescriptor.getColumnFamilies.map(
-            f => {f.getName})
+            f => {
+              f.getName
+            })
         var isEmptyRow = true
 
         try {
@@ -562,7 +570,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
               }
             }
 
-            if(isEmptyRow) {
+            if (isEmptyRow) {
               bytesWritable.set(kv._1)
               writer.write(bytesWritable,
                 new KeyValue(
@@ -607,12 +615,6 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
     sqlContext.sparkContext.runJob(shuffled, writeShard)
     logDebug(s"finished BulkLoad : ${System.currentTimeMillis()}")
     jobCommitter.commitJob(jobTaskContext)
-//    if (!parallel) {
-//      val tablePath = new Path(tmpPath)
-//      val load = new LoadIncrementalHFiles(conf)
-//      load.doBulkLoad(tablePath, relation.connection_.getAdmin, relation.htable,
-//        relation.connection_.getRegionLocator(relation.hTableName))
-//    }
     relation.close()
     Util.dropTempFilePath(hbContext.sparkContext.hadoopConfiguration, tmpPath)
     logDebug(s"finish BulkLoad on table ${relation.htable.getName}:" +
@@ -621,56 +623,59 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def loadPartition(
-                     db: String,
-                     table: String,
-                     loadPath: String,
-                     partition: TablePartitionSpec,
-                     isOverwrite: Boolean,
-                     holdDDLTime: Boolean,
-                     inheritTableSpecs: Boolean,
-                     isSkewedStoreAsSubdir: Boolean): Unit = {
+                              namespace: String,
+                              table: String,
+                              loadPath: String,
+                              partition: TablePartitionSpec,
+                              isOverwrite: Boolean,
+                              holdDDLTime: Boolean,
+                              inheritTableSpecs: Boolean,
+                              isSkewedStoreAsSubdir: Boolean): Unit = {
     throw new UnsupportedOperationException("loadPartition is not implemented")
   }
 
   override def createPartitions(
-                        db: String,
-                        table: String,
-                        parts: Seq[CatalogTablePartition],
-                        ignoreIfExists: Boolean): Unit = {
+                                 namespace: String,
+                                 table: String,
+                                 parts: Seq[CatalogTablePartition],
+                                 ignoreIfExists: Boolean): Unit = {
     throw new UnsupportedOperationException("createPartitions is not implemented")
   }
 
   override def dropPartitions(
-                      db: String,
-                      table: String,
-                      parts: Seq[TablePartitionSpec],
-                      ignoreIfNotExists: Boolean): Unit = {
+                               namespace: String,
+                               table: String,
+                               parts: Seq[TablePartitionSpec],
+                               ignoreIfNotExists: Boolean): Unit = {
     throw new UnsupportedOperationException("dropPartitions is not implemented")
   }
 
   override def renamePartitions(
-                        db: String,
-                        table: String,
-                        specs: Seq[TablePartitionSpec],
-                        newSpecs: Seq[TablePartitionSpec]): Unit = {
+                                 namespace: String,
+                                 table: String,
+                                 specs: Seq[TablePartitionSpec],
+                                 newSpecs: Seq[TablePartitionSpec]): Unit = {
     throw new UnsupportedOperationException("renamePartitions is not implemented")
   }
 
   override def alterPartitions(
-                       db: String,
-                       table: String,
-                       parts: Seq[CatalogTablePartition]): Unit = {
+                                namespace: String,
+                                table: String,
+                                parts: Seq[CatalogTablePartition]): Unit = {
     throw new UnsupportedOperationException("alterPartitions is not implemented")
   }
 
   override def getPartition(
-    db: String, table: String, spec: TablePartitionSpec): CatalogTablePartition = {
+                             namespace: String,
+                             table: String,
+                             spec: TablePartitionSpec): CatalogTablePartition = {
     throw new UnsupportedOperationException("getPartition is not implemented")
   }
 
   override def listPartitions(
-    db: String, table: String,
-    partialSpec: Option[TablePartitionSpec] = None): Seq[CatalogTablePartition] = {
+                               namespace: String,
+                               table: String,
+                               partialSpec: Option[TablePartitionSpec] = None): Seq[CatalogTablePartition] = {
     throw new UnsupportedOperationException("listPartitions is not implemented")
   }
 
@@ -725,7 +730,7 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
       val allColumns = relation.allColumns :+ column
       val hbaseRelation = HBaseRelation(relation.tableName, relation.hbaseNamespace,
         relation.hbaseTableName, allColumns, deploySuccessfully, relation.hasCoprocessor,
-        connection = connection) (sqlContext)
+        connection = connection)(sqlContext)
       hbaseRelation.setConfig(configuration)
 
       writeObjectToTable(hbaseRelation, metadataTable)

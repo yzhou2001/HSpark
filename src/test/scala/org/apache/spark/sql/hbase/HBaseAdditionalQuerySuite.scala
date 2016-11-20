@@ -25,6 +25,11 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 
 class HBaseAdditionalQuerySuite extends TestBase {
+  private val namespace = "default"
+  private val presplit_table = "presplit"
+  private val teacher_table = "teacher"
+  private val people_table = "people"
+  private val cf = "cf"
 
   override protected def beforeAll() = {
     super.beforeAll()
@@ -50,15 +55,14 @@ class HBaseAdditionalQuerySuite extends TestBase {
       generateRowKey(Array(4096, "cc", 0), 7),
       generateRowKey(Array(4096, "cc", 1000))
     )
-    if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists("", "presplit_table"))
-    {
-      dropNativeHbaseTable("presplit_table")
+    if (TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].tableExists(namespace, presplit_table)) {
+      dropNativeHbaseTable(presplit_table)
     }
     TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createHBaseUserTable(
-      TableName.valueOf("presplit_table"), Set("cf"), splitKeys, useCoprocessor)
+      TableName.valueOf(presplit_table), Set(cf), splitKeys, useCoprocessor)
 
     val sql =
-      s"""CREATE TABLE testblk TBLPROPERTIES('hbaseTableName'='presplit_table',
+      s"""CREATE TABLE testblk TBLPROPERTIES('hbaseTableName'='$presplit_table',
            'cols'='col1,col2,col3,col4',
            'keyCols'='col1,INT;col2,STRING;col3,INT',
            'nonKeyCols'='col4,STRING,cf,a')"""
@@ -74,7 +78,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
   def createTableTeacher(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_teacher_3key TBLPROPERTIES('hbaseTableName'='teacher',
+      s"""CREATE TABLE spark_teacher_3key TBLPROPERTIES('hbaseTableName'='$teacher_table',
            'cols'='grade,class,subject,teacher_name,teacher_age',
            'keyCols'='grade,INT;class,INT;subject,STRING',
            'nonKeyCols'='teacher_name,STRING,cf,a;teacher_age,INT,cf,b')"""
@@ -88,7 +92,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
   def createTablePeople(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_people TBLPROPERTIES('hbaseTableName'='people',
+      s"""CREATE TABLE spark_people TBLPROPERTIES('hbaseTableName'='$people_table',
            'cols'='rowNum,people_name,people_age,school_identification,school_director',
            'keyCols'='rowNum,INT',
            'nonKeyCols'='people_name,STRING,cf,a;people_age,INT,cf,b;school_identification,STRING,cf,c;school_director,STRING,cf,d')"""
@@ -114,17 +118,17 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
   def dropTableTestblk() = {
     runSql("drop table testblk")
-    dropNativeHbaseTable("presplit_table")
+    dropNativeHbaseTable(presplit_table)
   }
 
   def dropTableTeacher() = {
     runSql("drop table spark_teacher_3key")
-    dropNativeHbaseTable("teacher")
+    dropNativeHbaseTable(teacher_table)
   }
 
   def dropTablePeople() = {
     runSql("drop table spark_people")
-    dropNativeHbaseTable("people")
+    dropNativeHbaseTable(people_table)
   }
 
   test("UNION TEST") {
