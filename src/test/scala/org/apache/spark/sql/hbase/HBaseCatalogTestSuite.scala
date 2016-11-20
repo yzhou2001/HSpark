@@ -132,4 +132,14 @@ class HBaseCatalogTestSuite extends TestBase {
     assert(catalog.tableExists("", tableName) === false)
     catalog.stopAdmin()
   }
+
+  test("Namespce operations") {
+    runSql("CREATE DATABASE db1")
+    runSql(s"""CREATE TABLE db1.t1 TBLPROPERTIES('hbaseTableName'='ht',
+          'cols'='c1,c2', 'keyCols'='c1,INT','nonKeyCols'='c2,INT,cf,q')""")
+    assert(runSql("SHOW DATABASES").length == 3)
+    assert(runSql("SHOW tables IN db1").length == 1)
+    runSql("DROP DATABASE db1 CASCADE")
+    assert(runSql("SHOW DATABASES").length == 2)
+  }
 }

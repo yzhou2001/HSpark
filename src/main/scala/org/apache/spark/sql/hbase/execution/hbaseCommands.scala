@@ -75,7 +75,7 @@ case class ShowTablesCommand(databaseName: Option[String], tableIdentifierPatter
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val buffer = new ArrayBuffer[Row]()
-    val tables = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].getAllTableName
+    val tables = sparkSession.sharedState.externalCatalog.listTables(databaseName.get)
     tables.foreach(x => buffer.append(Row(x)))
     sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin()
     buffer

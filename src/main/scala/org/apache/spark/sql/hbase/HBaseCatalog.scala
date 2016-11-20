@@ -38,6 +38,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, NoSuchTableException}
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes._
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
@@ -47,14 +48,15 @@ import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, Util}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SQLContext}
+import org.apache.spark.sql.{AnalysisException, Row, SQLContext}
 import org.apache.spark.util.SerializableConfiguration
-import org.apache.spark.{SparkEnv, SparkHadoopWriter, TaskContext}
+import org.apache.spark.{SparkEnv, SparkException, SparkHadoopWriter, TaskContext}
 
 import scala.annotation.meta.param
 import scala.collection._
 import scala.collection.convert.decorateAsScala._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConversions._
 
 /**
  * Column represent the sql column
@@ -196,14 +198,47 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {
     if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != dbDefinition.name &&
       NamespaceDescriptor.SYSTEM_NAMESPACE.getName != dbDefinition.name) {
-      admin.createNamespace(NamespaceDescriptor.create(dbDefinition.name).build())
+      admin.createNamespace(NamespaceDescriptor.create(dbDefinition.name)
+        .addConfiguration(mapAsJavaMap(dbDefinition.properties)).build())
     }
   }
 
   override def dropDatabase(db: String, ignoreIfNotExists: Boolean, cascade: Boolean): Unit = {
-    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != db &&
-      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != db) {
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName == db ||
+      NamespaceDescriptor.SYSTEM_NAMESPACE.getName == db) {
+      throw new Exception(s"Cannot drop default namespace or system namespace: $db")
+      //admin.deleteNamespace(db)
+    }
+
+    val namespace = admin.getNamespaceDescriptor(db)
+    if (namespace != null) {
+      val tables = admin.listTableNamesByNamespace(db)
+      if (!cascade) {
+        if (tables.nonEmpty) {
+          throw new AnalysisException(s"Database '$db' is not empty. One or more tables exist.")
+        }
+      }
+      // Remove the tables
+      for (table <- tables) {
+        admin.disableTable(table)
+        admin.deleteTable(table)
+      }
+      // delete the entries in the metadata table
+      val metadataTable = getMetadataTable
+      for (key <- relationMapCache.keys) {
+        if (key.startsWith(getCacheMapKey(db, ""))) {
+          val delete = new Delete(Bytes.toBytes(key))
+          metadataTable.delete(delete)
+          relationMapCache.remove(key)
+        }
+      }
+      metadataTable.close()
       admin.deleteNamespace(db)
+      stopAdmin()
+    } else {
+      if (!ignoreIfNotExists) {
+        throw new NoSuchDatabaseException(db)
+      }
     }
   }
 
@@ -337,15 +372,18 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
 
   override def dropTable(namespace: String, table: String, ignoreIfNotExists: Boolean): Unit = {
     try {
-      val metadataTable = getMetadataTable
-      if (!checkLogicalTableExist(namespace, table, metadataTable)) {
-        throw new IllegalStateException(s"Logical table $table does not exist.")
+      requireDbExists(namespace)
+      if (tableExists(namespace, table)) {
+        val metadataTable = getMetadataTable
+        val delete = new Delete(Bytes.toBytes(getCacheMapKey(namespace, table)))
+        metadataTable.delete(delete)
+        metadataTable.close()
+        relationMapCache.remove(getCacheMapKey(namespace, table))
+      } else {
+        if (!ignoreIfNotExists) {
+          throw new NoSuchTableException(db = namespace, table = table)
+        }
       }
-
-      val delete = new Delete(Bytes.toBytes(getCacheMapKey(namespace, table)))
-      metadataTable.delete(delete)
-      metadataTable.close()
-      relationMapCache.remove(getCacheMapKey(namespace, table))
     } finally {
       stopAdmin()
     }
@@ -396,8 +434,18 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
   }
 
   override def listTables(db: String): Seq[String] = {
-    val tables = getAllTableName
-    stopAdmin()
+    val metadataTable = getMetadataTable
+    val tables = new ArrayBuffer[String]()
+    val scanner = metadataTable.getScanner(ColumnFamily)
+    var result = scanner.next()
+    while (result != null) {
+      val relation = getRelationFromResult(result)
+      if (relation.hbaseNamespace == db) {
+        tables.append(relation.tableName)
+      }
+      result = scanner.next()
+    }
+    metadataTable.close()
     tables
   }
 
@@ -743,20 +791,6 @@ private[hbase] class HBaseCatalog(@(transient @param) sqlContext: SQLContext,
     hbaseRelation.context = sqlContext
     hbaseRelation.setConfig(configuration)
     hbaseRelation
-  }
-
-  def getAllTableName: Seq[String] = {
-    val metadataTable = getMetadataTable
-    val tables = new ArrayBuffer[String]()
-    val scanner = metadataTable.getScanner(ColumnFamily)
-    var result = scanner.next()
-    while (result != null) {
-      val relation = getRelationFromResult(result)
-      tables.append(relation.tableName)
-      result = scanner.next()
-    }
-    metadataTable.close()
-    tables
   }
 
   def lookupRelation(namespace: String, tableName: String, alias: Option[String] = None): LogicalPlan = {
