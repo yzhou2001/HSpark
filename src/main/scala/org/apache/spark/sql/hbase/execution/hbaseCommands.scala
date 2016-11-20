@@ -59,59 +59,6 @@ case class AlterAddColCommand(namespace: String,
 }
 
 @DeveloperApi
-case class DropHbaseTableCommand(tableName: String) extends RunnableCommand {
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val hbaseCatalog = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-    hbaseCatalog.dropTable("", tableName, ignoreIfNotExists = true)
-    hbaseCatalog.stopAdmin()
-    Seq.empty[Row]
-  }
-}
-
-@DeveloperApi
-case class ShowTablesCommand(databaseName: Option[String], tableIdentifierPattern: Option[String])
-  extends RunnableCommand {
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val buffer = new ArrayBuffer[Row]()
-    val tables = sparkSession.sharedState.externalCatalog.listTables(databaseName.get)
-    tables.foreach(x => buffer.append(Row(x)))
-    sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin()
-    buffer
-  }
-
-  override def output: Seq[Attribute] = StructType(Seq(StructField("", StringType))).toAttributes
-}
-
-@DeveloperApi
-case class DescribeTableCommand(namespace: String, tableName: String) extends RunnableCommand {
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val buffer = new ArrayBuffer[Row]()
-    val relation = sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-      .getHBaseRelation(namespace, tableName)
-    if (relation.isDefined) {
-      relation.get.allColumns.foreach {
-        case keyColumn: KeyColumn =>
-          buffer.append(Row(keyColumn.sqlName, keyColumn.dataType.toString,
-            "KEY COLUMN", keyColumn.order.toString))
-        case nonKeyColumn: NonKeyColumn =>
-          buffer.append(Row(nonKeyColumn.sqlName, nonKeyColumn.dataType.toString,
-            "NON KEY COLUMN", nonKeyColumn.family, nonKeyColumn.qualifier))
-      }
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].stopAdmin
-      buffer
-    } else {
-      sys.error(s"can not find table $tableName")
-    }
-  }
-
-  override def output: Seq[Attribute] =
-    StructType(Seq.fill(5)(StructField("", StringType))).toAttributes
-}
-
-@DeveloperApi
 case class InsertValueIntoTableCommand(tableName: String, valueSeq: Seq[String])
   extends RunnableCommand {
   override def run(sparkSession: SparkSession) = {
