@@ -147,15 +147,16 @@ object HBaseSQLCliDriver extends Logging {
     if (token.length > 1) {
       token(1).toUpperCase match {
         case "CREATE" =>
-          println( """CREATE TABLE table_name TBLPROPERTIES(
+          println( """CREATE TABLE table_name (col_name data_type, ... , col_name, data_type) TBLPROPERTIES(
                       |'hbaseTableName'='hbase_table_name',
-                      |'cols'='col_name,...,col_name',
-                      |'keyCols'='col_name,data_type;...,col_name,data_type',
-                      |'nonKeyCols'='col_name,data_type,column_family,qualifier;...,col_name,data_type,column_family,qualifier')"""
+                      |'keyCols'='col_name;...;col_name',
+                      |'nonKeyCols'='col_name,column_family,qualifier;...;col_name,column_family,qualifier')"""
             .stripMargin)
         case "DROP" =>
+          println("DROP DATABASE db_name")
           println("DROP TABLE table_name")
         case "ALTER" =>
+          println("Unsupported yet - ")
           println("ALTER TABLE table_name ADD (col_name data_type, ...) MAPPED BY (expression)")
           println("ALTER TABLE table_name DROP col_name")
         case "LOAD" =>
@@ -174,8 +175,10 @@ object HBaseSQLCliDriver extends Logging {
           println("INSERT INTO TABLE table_name VALUES (value, ...)")
         case "DESCRIBE" =>
           println("DESCRIBE table_name")
+          println("DESCRIBE DATABASE [EXTENDED] db_name")
         case "SHOW" =>
-          println("SHOW TABLES")
+          println("SHOW TABLES [(IN|FROM) database_name] [[LIKE] 'pattern']")
+          println("SHOW (DATABASES|SCHEMAS) [LIKE 'pattern']")
         case _ =>
           printHelpUsage()
       }
