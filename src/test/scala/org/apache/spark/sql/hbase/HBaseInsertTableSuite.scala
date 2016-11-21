@@ -23,11 +23,10 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   var testnm = "Insert all rows to the table from other table"
   test("Insert all rows to the table from other table") {
-    val createQuery = s"""CREATE TABLE insertTestTable TBLPROPERTIES(
+    val createQuery = s"""CREATE TABLE insertTestTable (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INT, longcol LONG, floatcol FLOAT, doublecol DOUBLE) TBLPROPERTIES(
                       'hbaseTableName'='hinsertTestTable',
-                      'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
-                      'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
-                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')"""
+                      'keyCols'='doublecol;strcol;intcol',
+                      'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol;longcol,cf2,hlongcol;floatcol,cf2,hfloatco')"""
       .stripMargin
     runSql(createQuery)
 
@@ -48,11 +47,10 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert few rows to the table from other table after applying filter"
   test("Insert few rows to the table from other table after applying filter") {
-    val createQuery = s"""CREATE TABLE insertTestTableFilter TBLPROPERTIES(
+    val createQuery = s"""CREATE TABLE insertTestTableFilter (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INT, longcol LONG, floatcol FLOAT, doublecol DOUBLE) TBLPROPERTIES(
                       'hbaseTableName'='hinsertTestTableFilter',
-                      'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
-                      'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
-                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatco')""".stripMargin
+                      'keyCols'='doublecol;strcol;intcol',
+                      'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol;longcol,cf2,hlongcol;floatcol,cf2,hfloatco')""".stripMargin
       .stripMargin
     runSql(createQuery)
 
@@ -82,11 +80,10 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert few columns to the table from other table"
   test("Insert few columns to the table from other table") {
-    val createQuery = s"""CREATE TABLE insertTestTableFewCols TBLPROPERTIES(
+    val createQuery = s"""CREATE TABLE insertTestTableFewCols (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INTEGER) TBLPROPERTIES(
                       'hbaseTableName'='insertTestTableFewCols',
-                      'cols'='strcol,bytecol,shortcol,intcol',
-                      'keyCols'='strcol,STRING;intcol,INTEGER',
-                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
+                      'keyCols'='strcol;intcol',
+                      'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol')"""
       .stripMargin
     runSql(createQuery)
 
@@ -110,11 +107,10 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert into values test"
   test("Insert into values test") {
-    val createQuery = s"""CREATE TABLE insertValuesTest TBLPROPERTIES(
+    val createQuery = s"""CREATE TABLE insertValuesTest (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INTEGER) TBLPROPERTIES(
                       'hbaseTableName'='hinsertValuesTest',
-                      'cols'='strcol,bytecol,shortcol,intcol',
-                      'keyCols'='strcol,STRING;intcol,INTEGER',
-                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol')"""
+                      'keyCols'='strcol;intcol',
+                      'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol')"""
       .stripMargin
     runSql(createQuery)
 
@@ -144,11 +140,10 @@ class HBaseInsertTableSuite extends TestBaseWithNonSplitData {
 
   testnm = "Insert nullable values test"
   test("Insert nullable values test") {
-    val createQuery = s"""CREATE TABLE insertNullValuesTest TBLPROPERTIES(
+    val createQuery = s"""CREATE TABLE insertNullValuesTest (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INTEGER) TBLPROPERTIES(
                       'hbaseTableName'='hinsertNullValuesTest',
-                      'cols'='strcol,bytecol,shortcol,intcol',
-                      'keyCols'='strcol,STRING',
-                      'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;intcol,INTEGER,cf1,hintcol')"""
+                      'keyCols'='strcol',
+                      'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol;intcol,cf1,hintcol')"""
       .stripMargin
     runSql(createQuery)
 

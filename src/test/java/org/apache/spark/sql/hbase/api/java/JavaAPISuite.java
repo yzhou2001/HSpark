@@ -74,12 +74,10 @@ public class JavaAPISuite extends TestBase implements Serializable {
         final String insert_sql = "INSERT INTO TABLE " + staging_table + " VALUES (\"strcol\" , \"bytecol\" , \"shortcol\" , \"intcol\" ," +
                 "  \"longcol\" , \"floatcol\" , \"doublecol\")";
         final String retrieve_sql = "SELECT * FROM " + staging_table;
-        String create_sql = "CREATE TABLE " + staging_table + " TBLPROPERTIES(" +
+        String create_sql = "CREATE TABLE " + staging_table + " (strcol STRING, bytecol STRING, shortcol STRING, intcol STRING, longcol STRING, floatcol STRING, doublecol STRING) TBLPROPERTIES(" +
                 "'hbaseTableName'='" + hb_staging_table +"'," +
-                "'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol'," +
-                "'keyCols'='doublecol,STRING;strcol,STRING;intcol,STRING'," +
-                "'nonKeyCols'='bytecol,STRING,cf1,hbytecol;" +
-                "shortcol,STRING,cf1,hshortcol;longcol,STRING,cf2,hlongcol;floatcol,STRING,cf2,hfloatcol')";
+                "'keyCols'='doublecol;strcol;intcol'," +
+                "'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol;longcol,cf2,hlongcol;floatcol,cf2,hfloatcol')";
         ss.sql(create_sql).collect();
         ss.sql(insert_sql).collect();
         List<Row> rows = ss.sql(retrieve_sql).collectAsList();

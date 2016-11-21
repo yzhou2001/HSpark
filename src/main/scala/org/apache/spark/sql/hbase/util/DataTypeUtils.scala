@@ -187,14 +187,17 @@ object DataTypeUtils {
   def getDataType(dataType: String): DataType = {
     if (dataType.equalsIgnoreCase(StringType.typeName)) {
       StringType
-    } else if (dataType.equalsIgnoreCase(ByteType.typeName)) {
+    } else if (dataType.equalsIgnoreCase(ByteType.typeName) ||
+      dataType.equalsIgnoreCase(ByteType.simpleString)) {
       ByteType
-    } else if (dataType.equalsIgnoreCase(ShortType.typeName)) {
+    } else if (dataType.equalsIgnoreCase(ShortType.typeName) ||
+      dataType.equalsIgnoreCase(ShortType.simpleString)) {
       ShortType
     } else if (dataType.equalsIgnoreCase(IntegerType.typeName) ||
-      dataType.equalsIgnoreCase("int")) {
+      dataType.equalsIgnoreCase(IntegerType.simpleString)) {
       IntegerType
-    } else if (dataType.equalsIgnoreCase(LongType.typeName)) {
+    } else if (dataType.equalsIgnoreCase(LongType.typeName) ||
+      dataType.equalsIgnoreCase(LongType.simpleString)) {
       LongType
     } else if (dataType.equalsIgnoreCase(FloatType.typeName)) {
       FloatType
@@ -203,8 +206,6 @@ object DataTypeUtils {
     } else if (dataType.equalsIgnoreCase(BooleanType.typeName)) {
       BooleanType
     } else {
-      val s = BooleanType.typeName
-      println(s)
       throw new IllegalArgumentException(s"Unrecognized data type: $dataType")
     }
   }

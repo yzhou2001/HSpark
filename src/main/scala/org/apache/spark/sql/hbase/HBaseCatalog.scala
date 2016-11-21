@@ -117,11 +117,11 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     admin_ = None
   }
 
-  private def processName(tableName: String): String = {
+  private def processName(name: String): String = {
     if (!caseSensitive) {
-      tableName.toLowerCase
+      name.toLowerCase
     } else {
-      tableName
+      name
     }
   }
 
@@ -351,12 +351,34 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         throw new SparkException(s"HBase table name is not defined")
       }
       val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
-      val colsSeq = tableDefinition.properties.getOrElse(HBaseSQLConf.COLS, "").split(",")
-      val keyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "").split(";")
-        .map { c => val cols = c.split(","); (cols(0), cols(1)) }
-      val nonKeyCols = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
-        .filterNot(_ == "")
-        .map { c => val cols = c.split(","); (cols(0), cols(1), cols(2), cols(3)) }
+      val colsSeq = tableDefinition.schema.map(_.name)
+      val keyCols: Seq[(String, String)] = {
+        val keys = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "")
+          .split(";").filter(_.nonEmpty)
+        keys.map { f =>
+          val name = processName(f.trim)
+          val column = tableDefinition.schema.find(_.name == name)
+          if (column.isEmpty) {
+            throw new SparkException(s"HBase key column name $name is not defined properly")
+          }
+          (name, column.get.dataType)
+        }
+      }
+      val nonKeyCols: Seq[(String, String, String, String)] = {
+        val nonkeys = tableDefinition.properties.getOrElse(HBaseSQLConf.NONKEY_COLS, "").split(";")
+              .map(_.trim).filter(_.nonEmpty)
+        nonkeys.map { c =>
+          val cols = c.split(",")
+          val name = processName(cols(0).trim)
+          val column = tableDefinition.schema.find(_.name == name)
+          if (column.isEmpty) {
+            throw new SparkException(s"HBase non-key column name $name is not defined properly")
+          }
+          val family = cols(1).trim
+          val qualifier = cols(2).trim
+          (name, column.get.dataType, family, qualifier)
+        }
+      }
 
       val keyMap: Map[String, String] = keyCols.toMap
       val allColumns = colsSeq.map {
@@ -375,7 +397,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
               nonKeyCol._4
             )
           }
-      }.toSeq
+      }
 
       createTable(table, hbaseNamespace, hbaseTableName, allColumns, null, encodingFormat)
     }

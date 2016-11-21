@@ -136,8 +136,8 @@ class HBaseCatalogTestSuite extends TestBase {
 
   test("Namespce operations") {
     runSql("CREATE DATABASE db1")
-    runSql(s"""CREATE TABLE db1.t1 TBLPROPERTIES('hbaseTableName'='ht',
-          'cols'='c1,c2', 'keyCols'='c1,INT','nonKeyCols'='c2,INT,cf,q')""")
+    runSql(s"""CREATE TABLE db1.t1 (c1 INT, c2 INT) TBLPROPERTIES('hbaseTableName'='ht',
+          'keyCols'='c1','nonKeyCols'='c2,cf,q')""")
     assert(runSql("SHOW DATABASES").length == 3)
     assert(runSql("SHOW tables IN db1").length == 1)
     runSql("DROP DATABASE db1 CASCADE")

@@ -62,10 +62,9 @@ class HBaseAdditionalQuerySuite extends TestBase {
       TableName.valueOf(presplit_table), Set(cf), splitKeys, useCoprocessor)
 
     val sql =
-      s"""CREATE TABLE testblk TBLPROPERTIES('hbaseTableName'='$presplit_table',
-           'cols'='col1,col2,col3,col4',
-           'keyCols'='col1,INT;col2,STRING;col3,INT',
-           'nonKeyCols'='col4,STRING,cf,a')"""
+      s"""CREATE TABLE testblk (col1 INT, col2 STRING, col3 INT, col4 STRING) TBLPROPERTIES('hbaseTableName'='$presplit_table',
+           'keyCols'='col1;col2;col3',
+           'nonKeyCols'='col4,cf,a')"""
         .stripMargin
     runSql(sql)
 
@@ -78,10 +77,9 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
   def createTableTeacher(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_teacher_3key TBLPROPERTIES('hbaseTableName'='$teacher_table',
-           'cols'='grade,class,subject,teacher_name,teacher_age',
-           'keyCols'='grade,INT;class,INT;subject,STRING',
-           'nonKeyCols'='teacher_name,STRING,cf,a;teacher_age,INT,cf,b')"""
+      s"""CREATE TABLE spark_teacher_3key (grade INT, class INT, subject STRING, teacher_name STRING, teacher_age INT) TBLPROPERTIES('hbaseTableName'='$teacher_table',
+           'keyCols'='grade;class;subject',
+           'nonKeyCols'='teacher_name,cf,a;teacher_age,cf,b')"""
         .stripMargin
     runSql(sql)
 
@@ -92,10 +90,9 @@ class HBaseAdditionalQuerySuite extends TestBase {
 
   def createTablePeople(useCoprocessor: Boolean = true) = {
     val sql =
-      s"""CREATE TABLE spark_people TBLPROPERTIES('hbaseTableName'='$people_table',
-           'cols'='rowNum,people_name,people_age,school_identification,school_director',
-           'keyCols'='rowNum,INT',
-           'nonKeyCols'='people_name,STRING,cf,a;people_age,INT,cf,b;school_identification,STRING,cf,c;school_director,STRING,cf,d')"""
+      s"""CREATE TABLE spark_people (rowNum INT, people_name STRING, people_age INT, school_identification STRING, school_director STRING) TBLPROPERTIES('hbaseTableName'='$people_table',
+           'keyCols'='rowNum',
+           'nonKeyCols'='people_name,cf,a;people_age,cf,b;school_identification,cf,c;school_director,cf,d')"""
         .stripMargin
     runSql(sql)
 

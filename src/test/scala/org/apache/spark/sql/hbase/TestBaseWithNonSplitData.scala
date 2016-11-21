@@ -42,11 +42,10 @@ class TestBaseWithNonSplitData extends TestBase {
 
   override protected def beforeAll() = {
     super.beforeAll()
-    val testTableCreationSQL = s"""CREATE TABLE $TestTableName TBLPROPERTIES(
+    val testTableCreationSQL = s"""CREATE TABLE $TestTableName (strcol STRING, bytecol BYTE, shortcol SHORT, intcol INT, longcol LONG, floatcol FLOAT, doublecol DOUBLE) TBLPROPERTIES(
                                    'hbaseTableName'='$TestHBaseTableName',
-                                   'cols'='strcol,bytecol,shortcol,intcol,longcol,floatcol,doublecol',
-                                   'keyCols'='doublecol,DOUBLE;strcol,STRING;intcol,INTEGER',
-                                   'nonKeyCols'='bytecol,BYTE,cf1,hbytecol;shortcol,SHORT,cf1,hshortcol;longcol,LONG,cf2,hlongcol;floatcol,FLOAT,cf2,hfloatcol')"""
+                                   'keyCols'='doublecol;strcol;intcol',
+                                   'nonKeyCols'='bytecol,cf1,hbytecol;shortcol,cf1,hshortcol;longcol,cf2,hlongcol;floatcol,cf2,hfloatcol')"""
     createTable(TestTableName, TestHBaseTableName, testTableCreationSQL)
     loadData(TestTableName, s"$CsvPath/$DefaultLoadFile")
   }

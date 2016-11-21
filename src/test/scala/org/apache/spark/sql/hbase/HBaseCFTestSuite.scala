@@ -71,11 +71,10 @@ class HBaseCFTestSuite extends TestBase {
      * create table
      */
     val createSql =
-      s"""CREATE TABLE cf TBLPROPERTIES(
+      s"""CREATE TABLE cf (k1 INTEGER, k2 INTEGER, k3 INTEGER, nk1 INTEGER, nk2 INTEGER) TBLPROPERTIES(
           'hbaseTableName'='cf_htable',
-          'cols'='k1,k2,k3,nk1,nk2',
-          'keyCols'='k1,INTEGER;k2,INTEGER;k3,INTEGER',
-          'nonKeyCols'='nk1,INTEGER,f,nk1;nk2,INTEGER,f,nk2')"""
+          'keyCols'='k1;k2;k3',
+          'nonKeyCols'='nk1,f,nk1;nk2,f,nk2')"""
         .stripMargin
 
     try {

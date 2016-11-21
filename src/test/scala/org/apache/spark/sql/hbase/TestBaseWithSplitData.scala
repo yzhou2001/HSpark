@@ -90,11 +90,10 @@ class TestBaseWithSplitData extends TestBase {
     TestHbase.sharedState.externalCatalog.asInstanceOf[HBaseCatalog].createTable(
       TableName_a, namespace, HbaseTableName.getNameAsString, allColumns, splitKeys)
 
-    runSql(s"""CREATE TABLE $TableName_b TBLPROPERTIES(
+    runSql(s"""CREATE TABLE $TableName_b (col1 STRING, col2 BYTE, col3 SHORT, col4 INT, col5 LONG, col6 FLOAT, col7 INT) TBLPROPERTIES(
                 'hbaseTableName'='$HbaseTableName',
-                'cols'='col1,col2,col3,col4,col5,col6,col7',
-                'keyCols'='col7,INT;col1,STRING;col3,SHORT',
-                'nonKeyCols'='col2,BYTE,cf1,cq11;col4,INT,cf1,cq12;col5,LONG,cf2,cq21;col6,FLOAT,cf2,cq21')""".stripMargin)
+                'keyCols'='col7;col1;col3',
+                'nonKeyCols'='col2,cf1,cq11;col4,cf1,cq12;col5,cf2,cq21;col6,cf2,cq21')""".stripMargin)
 
     if (!TestHbase.hbaseAdmin.tableExists(HbaseTableName)) {
       throw new IllegalArgumentException("where is our table?")

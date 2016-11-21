@@ -90,11 +90,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 STRING, col2 STRING, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='testblkHTable',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -138,11 +137,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 STRING, col2 STRING, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='testblkHTable',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -184,11 +182,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-    s"""CREATE TABLE testNullColumnBulkload TBLPROPERTIES(
+    s"""CREATE TABLE testNullColumnBulkload (col1 STRING, col2 STRING, col3 STRING, col4 STRING) TBLPROPERTIES(
           'hbaseTableName'='testNullColumnBulkloadHTable',
-          'cols'='col1,col2,col3,col4',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b;col4,STRING,cf1,c')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b;col4,cf1,c')"""
         .stripMargin
 
     val sql2 =
@@ -239,11 +236,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
 
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testNullColumnBulkload TBLPROPERTIES(
+      s"""CREATE TABLE testNullColumnBulkload (col1 STRING, col2 STRING, col3 STRING, col4 STRING) TBLPROPERTIES(
           'hbaseTableName'='testNullColumnBulkloadHTable',
-          'cols'='col1,col2,col3,col4',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b;col4,STRING,cf1,c')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b;col4,cf1,c')"""
         .stripMargin
 
     val sql2 =
@@ -284,11 +280,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     createNativeHbaseTable("multi_cf_table", Seq("cf1", "cf2"))
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 STRING, col2 STRING, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='multi_cf_table',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -324,11 +319,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
     createNativeHbaseTable("multi_cf_table", Seq("cf1", "cf2"))
     // create sql table map with hbase table and run simple sql
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 STRING, col2 STRING, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='multi_cf_table',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,STRING',
-          'nonKeyCols'='col2,STRING,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -367,11 +361,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 INT, col2 INT, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='presplit_table',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,INT',
-          'nonKeyCols'='col2,INT,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -407,11 +400,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       Set("cf1", "cf2"), splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE testblk TBLPROPERTIES(
+      s"""CREATE TABLE testblk (col1 INT, col2 INT, col3 STRING) TBLPROPERTIES(
           'hbaseTableName'='presplit_table',
-          'cols'='col1,col2,col3',
-          'keyCols'='col1,INT',
-          'nonKeyCols'='col2,INT,cf1,a;col3,STRING,cf1,b')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,cf1,a;col3,cf1,b')"""
         .stripMargin
 
     val sql2 =
@@ -454,11 +446,10 @@ class HBaseBulkLoadIntoTableSuite extends TestBase {
       splitKeys.toArray)
 
     val sql1 =
-      s"""CREATE TABLE region_cnt_131 TBLPROPERTIES(
+      s"""CREATE TABLE region_cnt_131 (col1 INT, col2 INT) TBLPROPERTIES(
           'hbaseTableName'='REGION_CNT_131_HTBL',
-          'cols'='col1,col2',
-          'keyCols'='col1,INT',
-          'nonKeyCols'='col2,INT,f,a')"""
+          'keyCols'='col1',
+          'nonKeyCols'='col2,f,a')"""
         .stripMargin
 
     val regionInfoList =
