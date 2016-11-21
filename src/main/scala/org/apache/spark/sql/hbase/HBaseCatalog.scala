@@ -351,7 +351,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         throw new SparkException(s"HBase table name is not defined")
       }
       val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
-      val colsSeq = tableDefinition.schema.map(_.name)
+      val colsSeq = tableDefinition.schema.map(_.name).asJava
       val keyCols: Seq[(String, String)] = {
         val keys = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "")
           .split(";").filter(_.nonEmpty)
