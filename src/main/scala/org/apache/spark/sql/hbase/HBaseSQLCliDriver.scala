@@ -33,6 +33,18 @@ import scala.collection.mutable.ArrayBuffer
  *
  */
 object HBaseSQLCliDriver extends Logging {
+  final val ANSI_RESET = "\u001B[0m"
+  final val ANSI_BLACK = "\u001B[30m"
+  final val ANSI_RED = "\u001B[31m"
+  final val ANSI_GREEN = "\u001B[32m"
+  final val ANSI_YELLOW = "\u001B[33m"
+  final val ANSI_BLUE = "\u001B[34m"
+  final val ANSI_PURPLE = "\u001B[35m"
+  final val ANSI_CYAN = "\u001B[36m"
+  final val ANSI_WHITE = "\u001B[37m"
+
+  private var currentColor = ANSI_RESET
+
   private val prompt = "hspark> "
   private val conf = new SparkConf(true).set("spark.hadoop.hbase.zookeeper.quorum", "localhost")
   private val sc = new SparkContext("local[2]", "hspark", conf)
@@ -41,7 +53,9 @@ object HBaseSQLCliDriver extends Logging {
   private val QUIT = "QUIT"
   private val EXIT = "EXIT"
   private val HELP = "HELP"
-  private val KEYS = "QUIT EXIT HELP CREATE DROP ALTER LOAD SELECT INSERT DESCRIBE SHOW TABLES TBLPROPERTIES"
+  private val COLOR = "COLOR"
+
+  private val KEYS = "COLOR QUIT EXIT HELP CREATE DROP ALTER LOAD SELECT INSERT DESCRIBE SHOW TABLES TBLPROPERTIES"
   private val KEYWORDS = {
     val upper = KEYS.split(" ")
     val lower = upper.map (_.toLowerCase())
@@ -117,6 +131,20 @@ object HBaseSQLCliDriver extends Logging {
     }
     val token = line.split("\\s")
     token(0).toUpperCase match {
+      case COLOR =>
+        token(1).toUpperCase match {
+          case "RESET" => currentColor = ANSI_RESET
+          case "BLACK" => currentColor = ANSI_BLACK
+          case "RED" => currentColor = ANSI_RED
+          case "GREEN" => currentColor = ANSI_GREEN
+          case "YELLOW" => currentColor = ANSI_YELLOW
+          case "BLUE" => currentColor = ANSI_BLUE
+          case "PURPLE" => currentColor = ANSI_PURPLE
+          case "CYAN" => currentColor = ANSI_CYAN
+          case "WHITE" => currentColor = ANSI_WHITE
+          case _ => currentColor = ANSI_RESET
+        }
+        false
       case QUIT => true
       case EXIT => true
       case HELP => printHelp(token); false
@@ -130,7 +158,7 @@ object HBaseSQLCliDriver extends Logging {
           )
           val end = System.currentTimeMillis()
           out.println("OK")
-          if (!str.equals("++\n||\n++\n++\n")) out.println(str)
+          if (!str.equals("++\n||\n++\n++\n")) out.println(s"$currentColor$str$ANSI_RESET")
           val timeTaken: Double = (end - start) / 1000.0
           out.println(s"Time taken: $timeTaken seconds")
           out.flush()
