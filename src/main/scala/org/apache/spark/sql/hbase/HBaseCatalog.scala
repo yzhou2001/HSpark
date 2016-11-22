@@ -337,7 +337,9 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     s"${processName(namespace)}:${processName(table)}"
   }
 
-  override def createTable(namespace: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
+  override def createTable(tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
+    assert(tableDefinition.identifier.database.isDefined)
+    val namespace = tableDefinition.identifier.database.get
     requireDbExists(namespace)
     val table = tableDefinition.identifier.table
     if (tableExists(namespace, table)) {
@@ -439,13 +441,13 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     val identifier = TableIdentifier(table, Some(namespace))
 
     // prepare the schema for the table
-    val schema = relation.get.allColumns.map {
+    val schema = new StructType
+    relation.get.allColumns.map {
       case k: KeyColumn =>
-        CatalogColumn(k.sqlName, k.dataType.simpleString, nullable = false,
-          comment = Some(s"KEY COLUMNS ${k.order}"))
+        schema.add(k.sqlName, k.dataType, nullable = false, s"KEY COLUMNS ${k.order}")
       case nk: NonKeyColumn =>
-        CatalogColumn(nk.sqlName, nk.dataType.simpleString, nullable = true,
-          comment = Some(s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}"))
+        schema.add(nk.sqlName, nk.dataType.simpleString, nullable = true,
+          s"NON KEY COLUMNS ${nk.family}:${nk.qualifier}")
     }
 
     val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
@@ -824,8 +826,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     if (hbaseRelation.isEmpty) {
       sys.error(s"Table Not Found: $tableName")
     } else {
-      val tableWithQualifiers = SubqueryAlias(tableName, hbaseRelation.get.logicalRelation)
-      alias.map(a => SubqueryAlias(a.toLowerCase, tableWithQualifiers))
+      val tableWithQualifiers = SubqueryAlias(tableName, hbaseRelation.get.logicalRelation, None)
+      alias.map(a => SubqueryAlias(a.toLowerCase, tableWithQualifiers, None))
         .getOrElse(tableWithQualifiers)
     }
   }
