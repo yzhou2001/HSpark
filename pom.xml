@@ -164,6 +164,13 @@
       <systemPath>${spark.home}/sql/core/target/spark-sql_2.11-2.1.0-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-unsafe_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>system</scope>
+      <systemPath>${spark.home}/common/unsafe/target/spark-unsafe_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+    </dependency>
+    <dependency>
       <groupId>jline</groupId>
       <artifactId>jline</artifactId>
       <version>${jline.version}</version>
