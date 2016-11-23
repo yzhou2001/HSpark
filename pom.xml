@@ -147,35 +147,35 @@
       <artifactId>spark-core_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>system</scope>
-      <systemPath>${spark.home}/core/target/spark-core_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+      <systemPath>${spark.home}/core/target/spark-core_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>system</scope>
-      <systemPath>${spark.home}/sql/catalyst/target/spark-catalyst_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+      <systemPath>${spark.home}/sql/catalyst/target/spark-catalyst_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>system</scope>
-      <systemPath>${spark.home}/sql/core/target/spark-sql_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+      <systemPath>${spark.home}/sql/core/target/spark-sql_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-unsafe_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>system</scope>
-      <systemPath>${spark.home}/common/unsafe/target/spark-unsafe_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+      <systemPath>${spark.home}/common/unsafe/target/spark-unsafe_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-tags_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
       <scope>system</scope>
-      <systemPath>${spark.home}/common/tags/target/spark-tags_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+      <systemPath>${spark.home}/common/tags/target/spark-tags_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jline</groupId>
