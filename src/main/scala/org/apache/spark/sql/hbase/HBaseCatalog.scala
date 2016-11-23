@@ -359,11 +359,11 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
           .split(";").filter(_.nonEmpty)
         keys.map { f =>
           val name = processName(f.trim)
-          val column = tableDefinition.schema.find(_.name == name)
+          val column = tableDefinition.schema.fields.find(_.name == name)
           if (column.isEmpty) {
             throw new SparkException(s"HBase key column name $name is not defined properly")
           }
-          (name, column.get.dataType)
+          (name, column.get.dataType.simpleString)
         }
       }
       val nonKeyCols: Seq[(String, String, String, String)] = {
@@ -372,13 +372,13 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         nonkeys.map { c =>
           val cols = c.split(",")
           val name = processName(cols(0).trim)
-          val column = tableDefinition.schema.find(_.name == name)
+          val column = tableDefinition.schema.fields.find(_.name == name)
           if (column.isEmpty) {
             throw new SparkException(s"HBase non-key column name $name is not defined properly")
           }
           val family = cols(1).trim
           val qualifier = cols(2).trim
-          (name, column.get.dataType, family, qualifier)
+          (name, column.get.dataType.simpleString, family, qualifier)
         }
       }
 

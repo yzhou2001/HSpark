@@ -154,7 +154,7 @@ object HBaseSQLCliDriver extends Logging {
           val start = System.currentTimeMillis()
           val df = hbaseCtx.sql(line)
           val str = df.showString(Integer.MAX_VALUE - 1, truncate =
-            if (token(0) == "EXPLAIN") false else true
+            if (token(0) == "EXPLAIN") 0 else 20
           )
           val end = System.currentTimeMillis()
           out.println("OK")

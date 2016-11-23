@@ -76,7 +76,7 @@
     <scala.binary.version>2.11</scala.binary.version>
     <maven.version>3.3.9</maven.version>
     <sbt.project.name>hspark</sbt.project.name>
-    <spark.version>2.0.0</spark.version>
+    <spark.version>2.1.0-SNAPSHOT</spark.version>
     <hadoop.version>2.4.0</hadoop.version>
     <hbase.version>1.2.4</hbase.version>
     <protobuf.version>2.5.0</protobuf.version>
@@ -169,6 +169,13 @@
       <version>${spark.version}</version>
       <scope>system</scope>
       <systemPath>${spark.home}/common/unsafe/target/spark-unsafe_2.11-2.1.0-SNAPSHOT.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-tags_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>system</scope>
+      <systemPath>${spark.home}/common/tags/target/spark-tags_2.11-2.1.0-SNAPSHOT.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jline</groupId>

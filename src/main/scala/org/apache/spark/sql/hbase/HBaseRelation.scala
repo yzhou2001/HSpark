@@ -48,7 +48,7 @@ class HBaseSource extends RelationProvider {
     val catalog = sqlContext.sparkSession.catalog.asInstanceOf[HBaseCatalog]
 
     val catalogTable = CatalogTable(null, null, null, null, properties = parameters)
-    catalog.createTable("", catalogTable, ignoreIfExists = true)
+    catalog.createTable(catalogTable, ignoreIfExists = true)
 
     val tableName = parameters("tableName")
     val hbaseNamespace = parameters("namespace")
