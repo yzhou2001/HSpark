@@ -48,7 +48,7 @@ import org.apache.spark.sql.hbase.HBaseCatalog._
 import org.apache.spark.sql.hbase.HBasePartitioner.HBaseRawOrdering
 import org.apache.spark.sql.hbase.util.{BinaryBytesUtils, DataTypeUtils, Util}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, Row, SQLContext}
+import org.apache.spark.sql.{AnalysisException, Row, SQLContext, SparkSession}
 import org.apache.spark.util.SerializableConfiguration
 import org.apache.spark.{SparkEnv, SparkException, SparkHadoopWriter, TaskContext}
 
@@ -95,6 +95,8 @@ case class NonKeyColumn(sqlName: String, dataType: DataType, family: String, qua
 private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
                                   @(transient@param) configuration: Configuration)
   extends ExternalCatalog with Logging with Serializable {
+
+  val name = "hbase";
 
   @transient
   lazy val connection = ConnectionFactory.createConnection(configuration)
@@ -193,6 +195,12 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
       }
     }
     deploySuccessfully_internal
+  }
+
+  override def getSessionCatalog(sessionCatalog: SessionCatalog): DataSourceSessionCatalog = {
+    val session = sessionCatalog.sparkSession.asInstanceOf[SparkSession]
+    new HBaseSessionCatalog(this, connection, session,
+      session.sessionState.conf, sessionCatalog.hadoopConf)
   }
 
   override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {
@@ -405,7 +413,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     }
   }
 
-  override def dropTable(namespace: String, table: String, ignoreIfNotExists: Boolean): Unit = {
+  override def dropTable(namespace: String, table: String, ignoreIfNotExists: Boolean,
+                         purge: Boolean): Unit = {
     requireDbExists(namespace)
     if (tableExists(namespace, table)) {
       val metadataTable = getMetadataTable
@@ -424,7 +433,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     throw new UnsupportedOperationException("Rename table is not implemented")
   }
 
-  override def alterTable(namespace: String, tableDefinition: CatalogTable): Unit = {
+  override def alterTable(tableDefinition: CatalogTable): Unit = {
     throw new UnsupportedOperationException("Alter table is not implemented")
   }
 
@@ -651,9 +660,14 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
                               partition: TablePartitionSpec,
                               isOverwrite: Boolean,
                               holdDDLTime: Boolean,
-                              inheritTableSpecs: Boolean,
-                              isSkewedStoreAsSubdir: Boolean): Unit = {
+                              inheritTableSpecs: Boolean): Unit = {
     throw new UnsupportedOperationException("loadPartition is not implemented")
+  }
+
+  override def loadDynamicPartitions(db: String,table: String,loadPath: String,
+                                     partition: TablePartitionSpec,replace: Boolean,
+                                     numDP: Int,holdDDLTime: Boolean): Unit = {
+    throw new UnsupportedOperationException("loadDynamicPartitions is not implemented")
   }
 
   override def createPartitions(
@@ -668,7 +682,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
                                namespace: String,
                                table: String,
                                parts: Seq[TablePartitionSpec],
-                               ignoreIfNotExists: Boolean): Unit = {
+                               ignoreIfNotExists: Boolean,
+                               purge: Boolean): Unit = {
     throw new UnsupportedOperationException("dropPartitions is not implemented")
   }
 
@@ -692,6 +707,12 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
                              table: String,
                              spec: TablePartitionSpec): CatalogTablePartition = {
     throw new UnsupportedOperationException("getPartition is not implemented")
+  }
+
+  override def getPartitionOption(db: String, table: String,
+                                  spec: TablePartitionSpec): Option[CatalogTablePartition] =
+  {
+    throw new UnsupportedOperationException("getPartitionOption is not implemented")
   }
 
   override def listPartitions(

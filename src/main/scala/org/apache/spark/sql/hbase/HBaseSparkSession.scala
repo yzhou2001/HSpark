@@ -43,18 +43,10 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
 
   @transient
   override  private[sql] lazy val sharedState: SharedState =
-    new HBaseSharedState(sc, this.sqlContext)
+    new SharedState(sc)
 
   experimental.extraStrategies = Seq((new SparkPlanner(sc, sessionState.conf, Nil)
     with HBaseStrategies).HBaseDataSource)
-
-  @transient
-  protected[sql] val prepareForExecution = new RuleExecutor[SparkPlan] {
-    val batches = Batch("Add exchange", Once, EnsureRequirements(sessionState.conf)) ::
-      // No AddCoprocessor now for lack of unsafe support in coprocessor
-      // maybe added later
-      Nil
-  }
 }
 
 class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
@@ -72,9 +64,4 @@ class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSe
       override val extendedCheckRules = Seq(datasources.PreWriteCheck(conf, catalog))
     }
   }
-}
-
-class HBaseSharedState(sc: SparkContext, sqlContext: SQLContext) extends SharedState(sc) {
-  override lazy val externalCatalog: ExternalCatalog =
-    new HBaseCatalog(sqlContext, sc.hadoopConfiguration)
 }
