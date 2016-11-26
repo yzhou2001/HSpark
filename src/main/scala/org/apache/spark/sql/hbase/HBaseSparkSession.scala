@@ -19,49 +19,14 @@ package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.spark.SparkContext
-import org.apache.spark.api.java.JavaSparkContext
-import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.analysis.Analyzer
-import org.apache.spark.sql.catalyst.catalog.ExternalCatalog
-import org.apache.spark.sql.catalyst.rules.RuleExecutor
-import org.apache.spark.sql.execution.datasources.{DataSourceAnalysis, FindDataSourceTable, PreprocessTableInsertion, ResolveDataSource}
-import org.apache.spark.sql.execution.exchange.EnsureRequirements
-import org.apache.spark.sql.execution.{SparkPlan, SparkPlanner, datasources}
-import org.apache.spark.sql.hbase.execution.{HBaseSourceAnalysis, HBaseStrategies}
-import org.apache.spark.sql.internal.{SQLConf, SessionState, SharedState}
+import org.apache.spark.sql.SparkSession
 
 class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
-  self =>
-
-  def this(sparkContext: JavaSparkContext) = this(sparkContext.sc)
-
-  @transient
-  override private[sql] lazy val sessionState: SessionState = new HBaseSessionState(this)
-
+  // Just for testing purpose for now: to be removed in the future after
+  // the caller 1) builds up the HBase configuration;
+  // and 2) register the HBaseCatalog by itself
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
 
-  @transient
-  override  private[sql] lazy val sharedState: SharedState =
-    new SharedState(sc)
-
-  experimental.extraStrategies = Seq((new SparkPlanner(sc, sessionState.conf, Nil)
-    with HBaseStrategies).HBaseDataSource)
-}
-
-class HBaseSessionState(sparkSession: SparkSession) extends SessionState(sparkSession) {
-  override lazy val conf: SQLConf = new HBaseSQLConf
-
-  override lazy val analyzer: Analyzer = {
-    new Analyzer(catalog, conf) {
-      override val extendedResolutionRules =
-        PreprocessTableInsertion(conf) ::
-          new FindDataSourceTable(sparkSession) ::
-          DataSourceAnalysis(conf) ::
-          HBaseSourceAnalysis(conf, sparkSession) ::
-          (if (conf.runSQLonFile) new ResolveDataSource(sparkSession) :: Nil else Nil)
-
-      override val extendedCheckRules = Seq(datasources.PreWriteCheck(conf, catalog))
-    }
-  }
+  this.catalog.registerDataSource(new HBaseCatalog(this.sqlContext, sc.hadoopConfiguration))
 }

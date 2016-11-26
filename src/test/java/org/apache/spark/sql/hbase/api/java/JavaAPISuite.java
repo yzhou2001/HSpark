@@ -42,7 +42,7 @@ public class JavaAPISuite extends TestBase implements Serializable {
       System.setProperty("spark.hadoop.hbase.zookeeper.quorum", "localhost");
       SparkConf scf = new SparkConf(true);
       sc = new JavaSparkContext("local", "JavaAPISuite", scf);
-      ss = new HBaseSparkSession(sc);
+      ss = new HBaseSparkSession(sc.sc);
       testUtil = new HBaseTestingUtility(ss.sparkContext().hadoopConfiguration());
       try {
         testUtil.cleanupTestDir();

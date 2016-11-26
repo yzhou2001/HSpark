@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.catalog.DataSourceSessionCatalog
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkOptimizer, SparkPlanner}
-import org.apache.spark.sql.hbase.execution.HBaseStrategies
+import org.apache.spark.sql.hbase.execution.{HBaseStrategies, HBaseSourceAnalysis}
 import org.apache.spark.sql.internal.SQLConf
 
 private[sql] class HBaseSessionCatalog(
@@ -54,6 +54,12 @@ private[sql] class HBaseSessionCatalog(
 
   override def refreshTable(name: TableIdentifier): Unit = {
     throw new UnsupportedOperationException("refreshTable is not supported")
+  }
+
+  override lazy val analyzer: Analyzer = {
+    new Analyzer(this, conf) {
+      override val extendedResolutionRules = HBaseSourceAnalysis(conf, sparkSession) :: Nil
+    }
   }
 
   override def planner: SparkPlanner =
