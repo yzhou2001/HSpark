@@ -68,7 +68,6 @@
   </prerequisites>
 
   <properties>
-    <spark.home>/Users/mengbo/federation</spark.home>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.7</java.version>
@@ -87,8 +86,6 @@
     <jetty.version>9.2.16.v20160414</jetty.version>
     <jline.version>2.12.1</jline.version>
     <guava.version>14.0.1</guava.version>
-    <kryo.version>2.21</kryo.version>
-    <fasterxml.jackson.version>2.6.5</fasterxml.jackson.version>
 
     <test_classpath_file>${project.build.directory}/spark-test-classpath.txt</test_classpath_file>
     <!--
@@ -145,64 +142,29 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-reflect</artifactId>
-      <version>${scala.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.esotericsoftware.kryo</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${fasterxml.jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${fasterxml.jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.json4s</groupId>
-      <artifactId>json4s-jackson_${scala.binary.version}</artifactId>
-      <version>3.2.11</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <scope>system</scope>
-      <systemPath>${spark.home}/core/target/spark-core_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <scope>system</scope>
-      <systemPath>${spark.home}/sql/catalyst/target/spark-catalyst_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <scope>system</scope>
-      <systemPath>${spark.home}/sql/core/target/spark-sql_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-unsafe_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <scope>system</scope>
-      <systemPath>${spark.home}/common/unsafe/target/spark-unsafe_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-tags_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <scope>system</scope>
-      <systemPath>${spark.home}/common/tags/target/spark-tags_${scala.binary.version}-${spark.version}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>jline</groupId>

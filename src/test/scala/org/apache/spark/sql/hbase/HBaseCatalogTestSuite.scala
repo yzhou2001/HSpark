@@ -121,7 +121,7 @@ class HBaseCatalogTestSuite extends TestBase {
     val namespace = "default"
     val tableName = "testTable"
 
-    catalog.dropTable(namespace, tableName, ignoreIfNotExists = true)
+    catalog.dropTable(namespace, tableName, ignoreIfNotExists = true, true)
     assert(catalog.tableExists(namespace, tableName) === false)
     catalog.stopAdmin()
   }
