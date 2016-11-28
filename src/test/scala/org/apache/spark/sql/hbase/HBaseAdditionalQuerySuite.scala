@@ -161,7 +161,7 @@ class HBaseAdditionalQuerySuite extends TestBase {
   test("Join Parquet Table Table") {
     val sql =
       """select * from spark_teacher_3key
-        |join parquetTable where parquetTable.name="Bruce"
+        |cross join parquetTable where parquetTable.name="Bruce"
         |or parquetTable.favorite_color="Blue" """.stripMargin
     checkResult(TestHbase.sql(sql), containExchange = true, 24)
   }
