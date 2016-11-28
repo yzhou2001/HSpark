@@ -226,7 +226,7 @@ private[hbase] case class HBaseRelation(
   /**
    * partitions are updated per table lookup to keep the info reasonably updated
    */
-  @transient lazy val partitionExpiration = context.conf.asInstanceOf[HBaseSQLConf].partitionExpiration * 1000
+  @transient lazy val partitionExpiration = HBaseSQLConf.partitionExpiration(sqlContext.conf) * 1000
 
   @transient var partitionTS: Long = _
 
@@ -268,7 +268,7 @@ private[hbase] case class HBaseRelation(
 
   @transient private[hbase] lazy val dimSize = keyColumns.size
 
-  val scannerFetchSize = context.conf.asInstanceOf[HBaseSQLConf].scannerFetchSize
+  val scannerFetchSize = HBaseSQLConf.scannerFetchSize(context.conf)
 
   private[hbase] def generateRange(partition: HBasePartition, pred: Expression,
                                    index: Int): Range[_] = {
@@ -759,7 +759,7 @@ private[hbase] case class HBaseRelation(
     new HBaseSQLReaderRDD(
       this,
       context.conf.wholeStageEnabled,
-      context.conf.asInstanceOf[HBaseSQLConf].useCustomFilter,
+      HBaseSQLConf.useCustomFilter(context.conf),
       requiredColumns,
       subplan = None,
       dummyRDD = null,

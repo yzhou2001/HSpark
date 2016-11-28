@@ -31,7 +31,6 @@ import org.apache.spark.sql.internal.SQLConf
 
 private[sql] class HBaseSessionCatalog(
     externalCatalog: HBaseCatalog,
-    private[hbase] val client: Connection,
     sparkSession: SparkSession,
     conf: SQLConf,
     hadoopConf: Configuration)
@@ -49,11 +48,12 @@ private[sql] class HBaseSessionCatalog(
   override def lookupRelation(name: TableIdentifier, alias: Option[String]): LogicalPlan = {
     val table = formatTableName(name.table)
     val namespace = name.database.getOrElse("")
-    externalCatalog.lookupRelation(table, namespace, alias)
+    externalCatalog.lookupRelation(namespace, table, alias)
   }
 
   override def refreshTable(name: TableIdentifier): Unit = {
-    throw new UnsupportedOperationException("refreshTable is not supported")
+    // do not throw exception now since the DropTable command calls refreshTable in ddl.scala!
+//    throw new UnsupportedOperationException("refreshTable is not supported")
   }
 
   override lazy val analyzer: Analyzer = {

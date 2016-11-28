@@ -157,7 +157,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
 
   def deploySuccessfully: Option[Boolean] = {
     if (deploySuccessfully_internal == null) {
-      if (sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor) {
+      if (HBaseSQLConf.useCoprocessor(sqlContext.conf)) {
         val metadataTable = getMetadataTable
         // When building the connection to the hbase table, we need to check
         // whether the current directory in the regionserver is accessible or not.
@@ -199,7 +199,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
 
   override def getSessionCatalog(sessionCatalog: SessionCatalog): DataSourceSessionCatalog = {
     val session = sessionCatalog.sparkSession.asInstanceOf[SparkSession]
-    new HBaseSessionCatalog(this, connection, session,
+    new HBaseSessionCatalog(this, session,
       session.sessionState.conf, sessionCatalog.hadoopConf)
   }
 
@@ -312,7 +312,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
     val hTableName = TableName.valueOf(hbaseNamespace, hbaseTableName)
     if (!checkHBaseTableExists(hTableName)) {
       createHBaseUserTable(hTableName, families, splitKeys,
-        sqlContext.conf.asInstanceOf[HBaseSQLConf].useCoprocessor)
+        HBaseSQLConf.useCoprocessor(sqlContext.conf))
     } else {
       families.foreach { family =>
         if (!checkFamilyExists(hTableName, family)) {
@@ -342,7 +342,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
   }
 
   private def getCacheMapKey(namespace: String, table: String): String = {
-    s"${processName(namespace)}:${processName(table)}"
+    if (namespace.isEmpty) s"default:${processName(table)}"
+    else s"${processName(namespace)}:${processName(table)}"
   }
 
   override def createTable(tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {

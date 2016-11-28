@@ -28,5 +28,7 @@ class HBaseSparkSession(sc: SparkContext) extends SparkSession(sc) {
   HBaseConfiguration.merge(
     sc.hadoopConfiguration, HBaseConfiguration.create(sc.hadoopConfiguration))
 
-  this.catalog.registerDataSource(new HBaseCatalog(this.sqlContext, sc.hadoopConfiguration))
+  sharedState.externalCatalog = new HBaseCatalog(this.sqlContext, sc.hadoopConfiguration)
+  this.catalog.registerDataSource(sharedState.externalCatalog)
+  this.catalog.setCurrentDataSource("hbase")
 }

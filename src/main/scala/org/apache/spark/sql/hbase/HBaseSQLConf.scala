@@ -34,18 +34,14 @@ object HBaseSQLConf {
   val NONKEY_COLS = "nonKeyCols"
   val HBASE_TABLENAME = "hbaseTableName"
   val ENCODING_FORMAT = "encodingFormat"
-}
-
-/**
- * A trait that enables the setting and getting of mutable config parameters/hints.
- *
- */
-private[hbase] class HBaseSQLConf extends SQLConf {
-  import HBaseSQLConf._
-
   /** The expiration of cached partition (i.e., region) info; defaults to 10 minutes . */
-  private[hbase] def partitionExpiration: Long = getConfString(PARTITION_EXPIRATION, "600").toLong
-  private[hbase] def scannerFetchSize: Int = getConfString(SCANNER_FETCH_SIZE, "1000").toInt
-  private[hbase] def useCoprocessor: Boolean = getConfString(USE_COPROCESSOR, "false").toBoolean
-  private[hbase] def useCustomFilter: Boolean = getConfString(USE_CUSTOMFILTER, "true").toBoolean
+  private[hbase] def partitionExpiration(conf: SQLConf): Long
+    = conf.getConfString(PARTITION_EXPIRATION, "600").toLong
+  private[hbase] def scannerFetchSize(conf: SQLConf): Int
+    = conf.getConfString(SCANNER_FETCH_SIZE, "1000").toInt
+  private[hbase] def useCoprocessor(conf: SQLConf): Boolean
+    = conf.getConfString(USE_COPROCESSOR, "false").toBoolean
+  private[hbase] def useCustomFilter(conf: SQLConf): Boolean
+    = conf.getConfString(USE_CUSTOMFILTER, "true").toBoolean
 }
+
