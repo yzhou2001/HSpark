@@ -1,4 +1,4 @@
-## Astro: Fast SQL on HBase using SparkSQL
+## HSpark: Fast SQL on HBase using SparkSQL
 
 Apache HBase is a distributed Key-Value store of data on HDFS. It is modeled after Google’s Big Table, and provides APIs to query the data. The data is organized, partitioned and distributed by its “row keys”. Per partition, the data is further physically partitioned by “column families” that specify collections of “columns” of data. The data model is for wide and sparse tables where columns are dynamic and may well be sparse.
 
@@ -10,11 +10,11 @@ We believe, as a unified big data processing engine, Spark is in good position t
 
 ## Online Documentation
 
-Online documentation https://github.com/Huawei-Spark/Spark-SQL-on-HBase/blob/master/doc/SparkSQLOnHBase_v2.2.docx
+Online documentation https://github.com/yzhou2001/HSpark/tree/spark_2.0/doc/SparkSQLOnHBase_v2.2.docx
 
 ## Requirements
 
-This version of 1.0.0 requires Spark 1.4.0.
+This version of 2.0.0 requires Spark 2.0.0.
 
 ## Building Spark HBase
 
@@ -22,12 +22,16 @@ Spark HBase is built using [Apache Maven](http://maven.apache.org/).
 
 I. Clone and build Huawei-Spark/Spark-SQL-on-HBase
 ```
-$ git clone https://github.com/Huawei-Spark/Spark-SQL-on-HBase spark-hbase
+$ git clone https://github.com/yzhou2001/HSpark.git
+```
+or
+```
+$ git clone git@github.com:yzhou2001/HSpark.git
 ```
 
 II. Go to the root of the source tree
 ```
-$ cd spark-hbase
+$ cd HSpark
 ```
 
 III. Build the project
@@ -40,20 +44,9 @@ Or, build with testing. It will run test suites against a HBase minicluster.
 $ mvn clean install
 ```
 
-## Activate Coprocessor and Custom Filter in HBase
+## Coprocessor
 
-First, add the path of spark-hbase jar to the hbase-env.sh in $HBASE_HOME/conf directory, as follows:
-```
-HBASE_CLASSPATH=$HBASE_CLASSPATH:/spark-hbase-root-dir/target/spark-sql-on-hbase-1.0.0.jar
-```
-Then, register the coprocessor service 'CheckDirEndPoint' to hbase-site.xml in the same directory, as follows:
-```
-<property>
-    <name>hbase.coprocessor.region.classes</name>
-    <value>org.apache.spark.sql.hbase.CheckDirEndPointImpl</value>
-</property>
-```
-(Warning: Don't register another coprocessor service 'SparkSqlRegionObserver' here !)
+Currently, HBase coprocessor is not supported in this release.
 
 
 ## Interactive Scala Shell
@@ -67,23 +60,23 @@ The easiest way to start using Spark HBase is through the Scala shell:
 
 First, add the spark-hbase jar to the SPARK_CLASSPATH in the $SPARK_HOME/conf directory, as follows:
 ```
-SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/spark-sql-on-hbase-1.0.0.jar
+SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.0.0.jar
 ```
 Then go to the spark-hbase installation directory and issue
 ```
 ./bin/pyspark-hbase
 ```
-A successfull message is as follows:
+A successful message is as follows:
 
-   You are using Spark SQL on HBase!!!
+   You are using HSpark!!!
    HBaseSQLContext available as hsqlContext.
 
 To run a python script, the PYTHONPATH environment should be set to the "python" directory of the Spark-HBase installation. For example,
 ```
-export PYTHONPATH=/root-of-Spark-HBase/python
+export PYTHONPATH=/root-of-HSpark/python
 ```
 
-Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 1.0.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages Huawei-Spark/Spark-SQL-on-HBase:1.0.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages Huawei-Spark/Spark-SQL-on-HBase:1.0.0" for Pythin shell.
+Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.0.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:1.0.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.0.0" for Pythin shell.
 
 ## Running Tests
 
@@ -106,7 +99,7 @@ To import the current Spark HBase project for IntelliJ:
 1. Download IntelliJ and install the Scala plug-in for IntelliJ. You may also need to install Maven plug-in for IntelliJ.
 2. Go to "File -> Import Project", locate the Spark HBase source directory, and select "Maven Project".
 3. In the Import Wizard, select "Import Maven projects automatically" and leave other settings at their default. 
-4. Make sure some specific profiles are enabled. Select corresponding Hadoop version, "maven3" and also"hbase" in order to get dependencies.
+4. Make sure some specific profiles are enabled. Select corresponding Hadoop version, "maven3" and also "hbase" in order to get dependencies.
 5. Leave other settings at their default and you should be able to start your development.
 6. When you run the scala test, sometimes you will get out of memory exception. You can increase your VM memory usage by the following setting, for example:
 
