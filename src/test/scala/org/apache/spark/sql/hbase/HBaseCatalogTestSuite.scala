@@ -86,7 +86,7 @@ class HBaseCatalogTestSuite extends TestBase {
     assert(result.nonKeyColumns(1).dataType === FloatType)
     assert(result.nonKeyColumns.head.dataType === BooleanType)
 
-    val relation = catalog.lookupRelation("default", tableName)
+    val relation = catalog.lookupRelation(hbaseNamespace, tableName)
     val subquery = relation.asInstanceOf[SubqueryAlias]
     val hbRelation = subquery.child.asInstanceOf[LogicalRelation].relation.asInstanceOf[HBaseRelation]
     assert(hbRelation.nonKeyColumns.map(_.family) == List("family1", "family2"))

@@ -18,15 +18,14 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.Connection
+import org.apache.hadoop.hbase.NamespaceDescriptor
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.Analyzer
 import org.apache.spark.sql.catalyst.catalog.DataSourceSessionCatalog
-import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.{SparkOptimizer, SparkPlanner}
-import org.apache.spark.sql.hbase.execution.{HBaseStrategies, HBaseSourceAnalysis}
+import org.apache.spark.sql.execution.SparkPlanner
+import org.apache.spark.sql.hbase.execution.{HBaseSourceAnalysis, HBaseStrategies}
 import org.apache.spark.sql.internal.SQLConf
 
 private[sql] class HBaseSessionCatalog(
@@ -47,7 +46,7 @@ private[sql] class HBaseSessionCatalog(
 
   override def lookupRelation(name: TableIdentifier, alias: Option[String]): LogicalPlan = {
     val table = formatTableName(name.table)
-    val namespace = name.database.getOrElse("")
+    val namespace = name.database.getOrElse(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR)
     externalCatalog.lookupRelation(namespace, table, alias)
   }
 

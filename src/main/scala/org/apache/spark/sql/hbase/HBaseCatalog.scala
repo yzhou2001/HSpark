@@ -372,7 +372,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
           .split(";").filter(_.nonEmpty)
         keys.map { f =>
           val name = processName(f.trim)
-          val column = tableDefinition.schema.fields.find(filed => processName(filed.name) == name)
+          val column = tableDefinition.schema.fields.find(field => processName(field.name) == name)
           if (column.isEmpty) {
             throw new SparkException(s"HBase key column name $name is not defined properly")
           }
