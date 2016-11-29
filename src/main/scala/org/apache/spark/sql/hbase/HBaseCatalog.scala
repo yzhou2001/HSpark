@@ -197,8 +197,8 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
 
   override def createDatabase(dbDefinition: CatalogDatabase, ignoreIfExists: Boolean): Unit = {
     val db = dbDefinition.name
-    if (NamespaceDescriptor.DEFAULT_NAMESPACE.getName != db &&
-      NamespaceDescriptor.SYSTEM_NAMESPACE.getName != db) {
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR != db &&
+      NamespaceDescriptor.SYSTEM_NAMESPACE_NAME_STR != db) {
 
       if (admin.listNamespaceDescriptors().exists(_.getName == db)) {
         if (!ignoreIfExists) {
@@ -334,7 +334,12 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
   }
 
   private def getCacheMapKey(namespace: String, table: String): String = {
-    s"${processName(namespace)}:${processName(table)}"
+    val ns = if (namespace == null || namespace.isEmpty) {
+      NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR
+    } else {
+      namespace
+    }
+    s"${processName(ns)}:${processName(table)}"
   }
 
   override def createTable(namespace: String, tableDefinition: CatalogTable, ignoreIfExists: Boolean) = {
@@ -351,13 +356,13 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         throw new SparkException(s"HBase table name is not defined")
       }
       val encodingFormat = tableDefinition.properties.getOrElse(HBaseSQLConf.ENCODING_FORMAT, BinaryBytesUtils.name)
-      val colsSeq = tableDefinition.schema.map(_.name).asJava
+      val colsSeq = tableDefinition.schema.map(f => processName(f.name)).asJava
       val keyCols: Seq[(String, String)] = {
         val keys = tableDefinition.properties.getOrElse(HBaseSQLConf.KEY_COLS, "")
           .split(";").filter(_.nonEmpty)
         keys.map { f =>
           val name = processName(f.trim)
-          val column = tableDefinition.schema.find(_.name == name)
+          val column = tableDefinition.schema.find(field => processName(field.name) == name)
           if (column.isEmpty) {
             throw new SparkException(s"HBase key column name $name is not defined properly")
           }
@@ -370,7 +375,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
         nonkeys.map { c =>
           val cols = c.split(",")
           val name = processName(cols(0).trim)
-          val column = tableDefinition.schema.find(_.name == name)
+          val column = tableDefinition.schema.find(field => processName(field.name) == name)
           if (column.isEmpty) {
             throw new SparkException(s"HBase non-key column name $name is not defined properly")
           }
