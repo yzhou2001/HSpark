@@ -31,7 +31,7 @@
   <groupId>HSpark</groupId>
   <artifactId>hspark</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.0</version>
+  <version>${spark.version}</version>
   <name>HSpark</name>
   <url>https://github.com/yzhou2001/HSpark</url>
 
