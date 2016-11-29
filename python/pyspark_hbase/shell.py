@@ -30,7 +30,7 @@ import py4j
 import pyspark
 from pyspark_hbase.sql import HBaseSQLContext, context
 
-print("You are using Spark SQL on HBase!!!")
+print("You are using HSpark !!!")
 try:
     context.register(sc)
     hsqlContext = HBaseSQLContext(sc)
