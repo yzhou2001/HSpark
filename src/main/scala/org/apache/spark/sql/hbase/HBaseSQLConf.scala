@@ -34,7 +34,8 @@ object HBaseSQLConf {
   val NONKEY_COLS = "nonKeyCols"
   val HBASE_TABLENAME = "hbaseTableName"
   val ENCODING_FORMAT = "encodingFormat"
-  /** The expiration of cached partition (i.e., region) info; defaults to 10 minutes . */
+
+  /** The expiration of cached partition (i.e., region) info; defaults to 10 minutes. */
   private[hbase] def partitionExpiration(conf: SQLConf): Long
     = conf.getConfString(PARTITION_EXPIRATION, "600").toLong
   private[hbase] def scannerFetchSize(conf: SQLConf): Int

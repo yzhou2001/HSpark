@@ -96,7 +96,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
                                   @(transient@param) configuration: Configuration)
   extends ExternalCatalog with Logging with Serializable {
 
-  val name = "hbase";
+  val name = "hbase"
 
   @transient
   lazy val connection = ConnectionFactory.createConnection(configuration)
