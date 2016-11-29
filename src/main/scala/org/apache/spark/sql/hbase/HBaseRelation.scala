@@ -627,7 +627,7 @@ private[hbase] case class HBaseRelation(
             addToFilterList(filters, rightFilterList, FilterList.Operator.MUST_PASS_ONE)
           }
           Some(new FilterList(FilterList.Operator.MUST_PASS_ONE, filters))
-        case InSet(value@AttributeReference(name, dataType, _, _), hset) =>
+        case InSet(AttributeReference(name, dataType, _, _), hset) =>
           val column = nonKeyColumns.find(_.sqlName == name)
           if (column.isDefined) {
             val filterList = new FilterList(FilterList.Operator.MUST_PASS_ONE)
@@ -643,7 +643,7 @@ private[hbase] case class HBaseRelation(
           } else {
             None
           }
-        case In(value@AttributeReference(name, dataType, _, _), list)
+        case In(AttributeReference(name, dataType, _, _), list)
             if list.size > 0 && list.forall(_.isInstanceOf[Literal]) =>
           val column = nonKeyColumns.find(_.sqlName == name)
           if (column.isDefined) {

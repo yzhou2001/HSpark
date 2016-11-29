@@ -95,7 +95,7 @@ class ScanPredClassifier(relation: HBaseRelation) {
         } else {
           (None, Some(pred))
         }
-      case InSet(value@AttributeReference(name, dataType, _, _), hset)
+      case InSet(AttributeReference(name, dataType, _, _), hset)
         if relation.nonKeyColumns.exists(_.sqlName == name) =>
         var errorOccurred = false
         for (item <- hset if !errorOccurred) {
@@ -108,7 +108,7 @@ class ScanPredClassifier(relation: HBaseRelation) {
             DataTypeUtils.getBinaryComparator(
               relation.bytesUtils.create(dataType), Literal.create(item, dataType))
           } catch {
-            case e: Exception => errorOccurred = true
+            case _: Exception => errorOccurred = true
           }
         }
         if (errorOccurred) {

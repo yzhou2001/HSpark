@@ -157,7 +157,7 @@ object DataTypeUtils {
    */
   def getBinaryComparator(bu: ToBytesUtils, expression: Literal): ByteArrayComparable = {
     bu match {
-      case bbu: BinaryBytesUtils =>
+      case _: BinaryBytesUtils =>
         expression.dataType match {
           case BooleanType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Boolean]))
           case ByteType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Byte]))
@@ -169,7 +169,7 @@ object DataTypeUtils {
           case StringType => new BinaryComparator(bu.toBytes(expression.value))
           case _ => throw new Exception("Cannot convert the data type using BinaryComparator")
         }
-      case sbu: StringBytesUtils =>
+      case _: StringBytesUtils =>
         expression.dataType match {
           case BooleanType => new BoolComparator(bu.toBytes(expression.value.asInstanceOf[Boolean]))
           case ByteType => new ByteComparator(bu.toBytes(expression.value.asInstanceOf[Byte]))

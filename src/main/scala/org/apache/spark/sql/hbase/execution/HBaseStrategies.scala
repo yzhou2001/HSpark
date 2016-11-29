@@ -245,7 +245,7 @@ private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: Spark
       } else {
         s
       }
-    case insert@InsertIntoTable(s: SimpleCatalogRelation, p, c, o, i) =>
+    case insert@InsertIntoTable(s: SimpleCatalogRelation, _, _, _, _) =>
       val properties = s.metadata.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
