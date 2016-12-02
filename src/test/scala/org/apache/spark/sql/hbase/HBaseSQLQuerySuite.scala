@@ -761,7 +761,7 @@ class HBaseSQLQuerySuite extends TestBaseWithSplitData {
     def checkAggregation(query: String, isInvalidQuery: Boolean = true) {
       if (isInvalidQuery) {
         val e = intercept[AnalysisException](sql(query).queryExecution.analyzed)
-        assert(e.getMessage contains "group by")
+        assert(e.getMessage.contains("grouping") || e.getMessage.contains("group by"))
       } else {
         // Should not throw
         sql(query).queryExecution.analyzed
