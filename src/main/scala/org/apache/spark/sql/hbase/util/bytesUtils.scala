@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hbase.util
 
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
@@ -31,10 +32,11 @@ trait BytesUtils {
   def toBoolean(input: HBaseRawType, offset: Int, length: Int): Boolean
   def toDate(input: HBaseRawType, offset: Int, length: Int): Int
   def toDouble(input: HBaseRawType, offset: Int, length: Int): Double
-  def toShort(input: HBaseRawType, offset: Int, length: Int): Short
   def toFloat(input: HBaseRawType, offset: Int, length: Int): Float
   def toInt(input: HBaseRawType, offset: Int, length: Int): Int
   def toLong(input: HBaseRawType, offset: Int, length: Int): Long
+  def toShort(input: HBaseRawType, offset: Int, length: Int): Short
+  def toTimestamp(input: HBaseRawType, offset: Int, length: Int): Long
 
   /**
    * append one to the byte array
@@ -98,10 +100,11 @@ trait ToBytesUtils {
   def toBytes(input: Boolean): HBaseRawType
   def toBytes(input: java.sql.Date): HBaseRawType
   def toBytes(input: Double): HBaseRawType
-  def toBytes(input: Short): HBaseRawType
   def toBytes(input: Float): HBaseRawType
   def toBytes(input: Int): HBaseRawType
   def toBytes(input: Long): HBaseRawType
+  def toBytes(input: Short): HBaseRawType
+  def toBytes(input: java.sql.Timestamp): HBaseRawType
   def toBytes(input: Any): HBaseRawType
 }
 
@@ -119,6 +122,8 @@ object BinaryBytesUtils extends BytesUtils{
       case LongType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_LONG), LongType)
       case ShortType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_SHORT), ShortType)
       case StringType => new BinaryBytesUtils(null, StringType)
+      case TimestampType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_LONG), TimestampType)
+      case _=> throw new SparkException(s"Unrecognized data type: ${dataType.catalogString}")
     }
   }
 
@@ -147,13 +152,6 @@ object BinaryBytesUtils extends BytesUtils{
     java.lang.Double.longBitsToDouble(l)
   }
 
-  def toShort(input: HBaseRawType, offset: Int, length: Int = 0): Short = {
-    // flip sign bit back
-    var v: Int = input(offset) ^ 0x80
-    v = (v << 8) + (input(1 + offset) & 0xff)
-    v.asInstanceOf[Short]
-  }
-
   def toFloat(input: HBaseRawType, offset: Int, length: Int = 0): Float = {
     var i = Bytes.toInt(input, offset)
     i = i - 1
@@ -177,6 +175,18 @@ object BinaryBytesUtils extends BytesUtils{
       v = (v << 8) + (input(i + offset) & 0xff)
     }
     v
+  }
+
+  def toShort(input: HBaseRawType, offset: Int, length: Int = 0): Short = {
+    // flip sign bit back
+    var v: Int = input(offset) ^ 0x80
+    v = (v << 8) + (input(1 + offset) & 0xff)
+    v.asInstanceOf[Short]
+  }
+
+  def toTimestamp(input: HBaseRawType, offset: Int, length: Int): Long = {
+    val v = Bytes.toLong(input, offset, Bytes.SIZEOF_LONG)
+    v * 1000L
   }
 }
 
@@ -216,12 +226,6 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     buffer
   }
 
-  def toBytes(input: Short): HBaseRawType = {
-    buffer(0) = ((input >> 8) ^ 0x80).asInstanceOf[Byte]
-    buffer(1) = input.asInstanceOf[Byte]
-    buffer
-  }
-
   def toBytes(input: Float): HBaseRawType = {
     var i: Int = java.lang.Float.floatToIntBits(input)
     i = (i ^ ((i >> Integer.SIZE - 1) | Integer.MIN_VALUE)) + 1
@@ -247,6 +251,18 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     buffer(5) = (input >> 16).asInstanceOf[Byte]
     buffer(6) = (input >> 8).asInstanceOf[Byte]
     buffer(7) = input.asInstanceOf[Byte]
+    buffer
+  }
+
+  def toBytes(input: Short): HBaseRawType = {
+    buffer(0) = ((input >> 8) ^ 0x80).asInstanceOf[Byte]
+    buffer(1) = input.asInstanceOf[Byte]
+    buffer
+  }
+
+  def toBytes(input: java.sql.Timestamp): HBaseRawType = {
+    val v = input.getTime
+    Bytes.putLong(buffer, 0, v)
     buffer
   }
 
@@ -323,6 +339,10 @@ object StringBytesUtils extends BytesUtils {
   def toLong(input: HBaseRawType, offset: Int, length: Int): Long = {
     toString(input, offset, length).toLong
   }
+
+  def toTimestamp(input: HBaseRawType, offset: Int, length: Int): Long = {
+    toString(input, offset, length).toLong * 1000L
+  }
 }
 
 class StringBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUtils{
@@ -370,6 +390,11 @@ class StringBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
 
   def toBytes(input: Long): HBaseRawType = {
     buffer = input.toString.getBytes
+    buffer
+  }
+
+  def toBytes(input: java.sql.Timestamp): HBaseRawType = {
+    buffer = input.getTime.toString.getBytes
     buffer
   }
 

@@ -50,7 +50,8 @@ object DataTypeUtils {
       case LongType => bytesUtils.toLong(src, offset, length)
       case ShortType => bytesUtils.toShort(src, offset, length)
       case StringType => bytesUtils.toUTF8String(src, offset, length)
-      case _ => throw new SparkException("Unsupported HBase SQL Data Type")
+      case TimestampType => bytesUtils.toTimestamp(src, offset, length)
+      case _ => throw new SparkException(s"Unsupported HBase SQL Data Type ${dt.catalogString}")
     }
   }
 
@@ -75,6 +76,7 @@ object DataTypeUtils {
       case LongType => bu.toBytes(src.asInstanceOf[Long])
       case ShortType => bu.toBytes(src.asInstanceOf[Short])
       case StringType => bu.toBytes(src)
+      case TimestampType => bu.toBytes(src.asInstanceOf[java.sql.Timestamp])
       case _ => new JavaSerializer(null).newInstance().serialize[Any](src).array //TODO
     }
   }
@@ -105,6 +107,7 @@ object DataTypeUtils {
       case LongType => row.setLong(index, bytesUtils.toLong(src, offset, length))
       case ShortType => row.setShort(index, bytesUtils.toShort(src, offset, length))
       case StringType => row.update(index, bytesUtils.toUTF8String(src, offset, length))
+      case TimestampType => row.update(index, bytesUtils.toTimestamp(src, offset, length))
       case _ => row.update(index, new JavaSerializer(null).newInstance()
         .deserialize[Any](ByteBuffer.wrap(src))) //TODO
     }
@@ -125,6 +128,7 @@ object DataTypeUtils {
           case LongType => v.toLong
           case ShortType => v.toShort
           case StringType => v
+          case TimestampType => java.sql.Timestamp.valueOf(v)
         }
     }
   }
@@ -151,7 +155,8 @@ object DataTypeUtils {
       case LongType => bu.toBytes(row.getLong(index))
       case ShortType => bu.toBytes(row.getShort(index))
       case StringType => bu.toBytes(row.getString(index))
-      case _ => throw new Exception("Unsupported HBase SQL Data Type")
+      case TimestampType => bu.toBytes(row.getTimestamp(index))
+      case _ => throw new SparkException(s"Unsupported HBase SQL Data Type ${dt.catalogString}")
     }
   }
 
@@ -174,7 +179,8 @@ object DataTypeUtils {
           case LongType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Long]))
           case ShortType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Short]))
           case StringType => new BinaryComparator(bu.toBytes(expression.value))
-          case _ => throw new Exception("Cannot convert the data type using BinaryComparator")
+          case TimestampType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Long]))
+          case _ => throw new SparkException("Cannot convert the data type using BinaryComparator")
         }
       case _: StringBytesUtils =>
         expression.dataType match {
@@ -187,36 +193,36 @@ object DataTypeUtils {
           case LongType => new LongComparator(bu.toBytes(expression.value.asInstanceOf[Long]))
           case ShortType => new ShortComparator(bu.toBytes(expression.value.asInstanceOf[Short]))
           case StringType => new BinaryComparator(bu.toBytes(expression.value))
-          case _ => throw new Exception("Cannot convert the data type using CustomComparator")
+          case TimestampType => new LongComparator(bu.toBytes(expression.value.asInstanceOf[Long]))
+          case _ => throw new SparkException("Cannot convert the data type using CustomComparator")
         }
     }
   }
 
-  def getDataType(dataType: String): DataType = {
-    if (dataType.equalsIgnoreCase(StringType.typeName)) {
-      StringType
-    } else if (dataType.equalsIgnoreCase(ByteType.typeName) ||
-      dataType.equalsIgnoreCase(ByteType.simpleString)) {
+  def getDataType(data: String): DataType = {
+    val dataType = data.toLowerCase
+    if (dataType == ByteType.catalogString) {
       ByteType
-    } else if (dataType.equalsIgnoreCase(DateType.typeName)) {
-      DateType
-    } else if (dataType.equalsIgnoreCase(ShortType.typeName) ||
-      dataType.equalsIgnoreCase(ShortType.simpleString)) {
-      ShortType
-    } else if (dataType.equalsIgnoreCase(IntegerType.typeName) ||
-      dataType.equalsIgnoreCase(IntegerType.simpleString)) {
-      IntegerType
-    } else if (dataType.equalsIgnoreCase(LongType.typeName) ||
-      dataType.equalsIgnoreCase(LongType.simpleString)) {
-      LongType
-    } else if (dataType.equalsIgnoreCase(FloatType.typeName)) {
-      FloatType
-    } else if (dataType.equalsIgnoreCase(DoubleType.typeName)) {
-      DoubleType
-    } else if (dataType.equalsIgnoreCase(BooleanType.typeName)) {
+    } else if (dataType == BooleanType.catalogString) {
       BooleanType
+    } else if (dataType == DateType.catalogString) {
+      DateType
+    } else if (dataType == DoubleType.catalogString) {
+      DoubleType
+    } else if (dataType == FloatType.catalogString) {
+      FloatType
+    } else if (dataType == IntegerType.catalogString) {
+      IntegerType
+    } else if (dataType == LongType.catalogString) {
+      LongType
+    } else if (dataType == ShortType.catalogString) {
+      ShortType
+    } else if (dataType == StringType.catalogString) {
+      StringType
+    } else if (dataType == TimestampType.catalogString) {
+      TimestampType
     } else {
-      throw new IllegalArgumentException(s"Unrecognized data type: $dataType")
+      throw new SparkException(s"Unrecognized data type: $data")
     }
   }
 }

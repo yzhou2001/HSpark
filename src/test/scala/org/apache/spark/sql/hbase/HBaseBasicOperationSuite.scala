@@ -38,7 +38,7 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("DateType test") {
-    sql( """CREATE TABLE date_table (c1 INTEGER, c2 date) TBLPROPERTIES(
+    sql( """CREATE TABLE date_table (c1 INTEGER, c2 DATE) TBLPROPERTIES(
         'hbaseTableName'='date_table',
         'keyCols'='c1',
         'nonKeyCols'='c2,f,c')""")
@@ -51,6 +51,22 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
     assert(result(1).get(0) == 1)
     assert(result(1).get(1).toString == "2010-01-01")
     sql("drop table date_table")
+  }
+
+  test("TimestampType test") {
+    sql( """CREATE TABLE ts_table (c1 INTEGER, c2 TIMESTAMP) TBLPROPERTIES(
+        'hbaseTableName'='ts_table',
+        'keyCols'='c1',
+        'nonKeyCols'='c2,f,c')""")
+    sql("insert into table ts_table values (1, '2009-08-07 13:14:15')")
+    sql("insert into table ts_table values (2, '2010-08-07 13:14:15')")
+    val result = sql("select * from ts_table order by c2 desc").collect
+    assert(result.length == 2)
+    assert(result(0).get(0) == 2)
+    assert(result(0).get(1).toString == "2010-08-07 13:14:15.0")
+    assert(result(1).get(0) == 1)
+    assert(result(1).get(1).toString == "2009-08-07 13:14:15.0")
+    sql("drop table ts_table")
   }
 
   test("Insert Into table in StringFormat") {
