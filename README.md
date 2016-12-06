@@ -14,7 +14,7 @@ Online documentation https://github.com/yzhou2001/HSpark/tree/spark_2.0/doc/Spar
 
 ## Requirements
 
-This version of 2.0.0 requires Spark 2.0.0.
+This version of 2.0.2 requires Spark 2.0.2.
 
 ## Building Spark HBase
 
@@ -60,7 +60,7 @@ The easiest way to start using Spark HBase is through the Scala shell:
 
 First, add the spark-hbase jar to the SPARK_CLASSPATH in the $SPARK_HOME/conf directory, as follows:
 ```
-SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.0.0.jar
+SPARK_CLASSPATH=$SPARK_CLASSPATH:/spark-hbase-root-dir/target/HSpark-2.0.2.jar
 ```
 Then go to the spark-hbase installation directory and issue
 ```
@@ -76,7 +76,7 @@ To run a python script, the PYTHONPATH environment should be set to the "python"
 export PYTHONPATH=/root-of-HSpark/python
 ```
 
-Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.0.0. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:1.0.0" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.0.0" for Pythin shell.
+Note that the shell commands are not included in the Zip file of the Spark release. They are for developers' use only for this version of 2.0.2. Instead, users can use "$SPARK_HOME/bin/spark-shell --packages HSpark/HSpark:2.0.2" for SQL shell or "$SPARK_HOME/bin/pyspark --packages HSpark/HSpark:2.0.2" for Pythin shell.
 
 ## Running Tests
 
@@ -114,4 +114,4 @@ You can also make those setting to be the default by setting to the "Defaults ->
 Please refer to the [Configuration guide](http://spark.apache.org/docs/latest/configuration.html)
 in the online documentation for an overview on how to configure Spark.
 
-For HBase 1.1, it is recommended to use higher "open files" and "max user processes" ulimit values. A typical value is 65536(64K). 
+For HBase 1.2, it is recommended to use higher "open files" and "max user processes" ulimit values. A typical value is 65536(64K). 
