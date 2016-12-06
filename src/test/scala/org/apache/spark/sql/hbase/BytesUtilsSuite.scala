@@ -19,6 +19,7 @@ package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.hbase.types.HBaseBytesType
 import org.apache.spark.sql.hbase.util.BinaryBytesUtils
 import org.apache.spark.sql.types._
@@ -92,6 +93,10 @@ class BytesUtilsSuite extends FunSuite with BeforeAndAfterAll with Logging {
 
     assert(compare(BinaryBytesUtils.create(IntegerType).toBytes(128),
       BinaryBytesUtils.create(IntegerType).toBytes(-128)) > 0)
+
+    val date = new java.sql.Date(new java.util.Date().getTime)
+    assert(BinaryBytesUtils.toDate(BinaryBytesUtils.create(DateType).toBytes(date), 0, 4) ===
+      DateTimeUtils.millisToDays(date.getTime))
   }
 
   test("byte array plus one") {

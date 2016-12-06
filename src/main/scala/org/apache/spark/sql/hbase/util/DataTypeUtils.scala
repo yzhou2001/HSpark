@@ -19,6 +19,7 @@ package org.apache.spark.sql.hbase.util
 import java.nio.ByteBuffer
 
 import org.apache.hadoop.hbase.filter.{BinaryComparator, ByteArrayComparable}
+import org.apache.spark.SparkException
 import org.apache.spark.serializer.JavaSerializer
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.{Literal, MutableRow}
@@ -42,13 +43,14 @@ object DataTypeUtils {
     dt match {
       case BooleanType => bytesUtils.toBoolean(src, offset, length)
       case ByteType => bytesUtils.toByte(src, offset, length)
+      case DateType => bytesUtils.toDate(src, offset, length)
       case DoubleType => bytesUtils.toDouble(src, offset, length)
       case FloatType => bytesUtils.toFloat(src, offset, length)
       case IntegerType => bytesUtils.toInt(src, offset, length)
       case LongType => bytesUtils.toLong(src, offset, length)
       case ShortType => bytesUtils.toShort(src, offset, length)
       case StringType => bytesUtils.toUTF8String(src, offset, length)
-      case _ => throw new Exception("Unsupported HBase SQL Data Type")
+      case _ => throw new SparkException("Unsupported HBase SQL Data Type")
     }
   }
 
@@ -66,6 +68,7 @@ object DataTypeUtils {
     dt match {
       case BooleanType => bu.toBytes(src.asInstanceOf[Boolean])
       case ByteType => bu.toBytes(src.asInstanceOf[Byte])
+      case DateType => bu.toBytes(src.asInstanceOf[java.sql.Date])
       case DoubleType => bu.toBytes(src.asInstanceOf[Double])
       case FloatType => bu.toBytes(src.asInstanceOf[Float])
       case IntegerType => bu.toBytes(src.asInstanceOf[Int])
@@ -95,6 +98,7 @@ object DataTypeUtils {
     dt match {
       case BooleanType => row.setBoolean(index, bytesUtils.toBoolean(src, offset, length))
       case ByteType => row.setByte(index, bytesUtils.toByte(src, offset, length))
+      case DateType => row.update(index, bytesUtils.toDate(src, offset, length))
       case DoubleType => row.setDouble(index, bytesUtils.toDouble(src, offset, length))
       case FloatType => row.setFloat(index, bytesUtils.toFloat(src, offset, length))
       case IntegerType => row.setInt(index, bytesUtils.toInt(src, offset, length))
@@ -114,6 +118,7 @@ object DataTypeUtils {
           // TODO: handle some complex types
           case BooleanType => v.toBoolean
           case ByteType => v.getBytes()(0)
+          case DateType => java.sql.Date.valueOf(v)
           case DoubleType => v.toDouble
           case FloatType => v.toFloat
           case IntegerType => v.toInt
@@ -139,6 +144,7 @@ object DataTypeUtils {
     dt match {
       case BooleanType => bu.toBytes(row.getBoolean(index))
       case ByteType => bu.toBytes(row.getByte(index))
+      case DateType => bu.toBytes(row.getDate(index))
       case DoubleType => bu.toBytes(row.getDouble(index))
       case FloatType => bu.toBytes(row.getFloat(index))
       case IntegerType => bu.toBytes(row.getInt(index))
@@ -161,6 +167,7 @@ object DataTypeUtils {
         expression.dataType match {
           case BooleanType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Boolean]))
           case ByteType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Byte]))
+          case DateType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Int]))
           case DoubleType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Double]))
           case FloatType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Float]))
           case IntegerType => new BinaryComparator(bu.toBytes(expression.value.asInstanceOf[Int]))
@@ -173,6 +180,7 @@ object DataTypeUtils {
         expression.dataType match {
           case BooleanType => new BoolComparator(bu.toBytes(expression.value.asInstanceOf[Boolean]))
           case ByteType => new ByteComparator(bu.toBytes(expression.value.asInstanceOf[Byte]))
+          case DateType => new IntComparator(bu.toBytes(expression.value.asInstanceOf[Int]))
           case DoubleType => new DoubleComparator(bu.toBytes(expression.value.asInstanceOf[Double]))
           case FloatType => new FloatComparator(bu.toBytes(expression.value.asInstanceOf[Float]))
           case IntegerType => new IntComparator(bu.toBytes(expression.value.asInstanceOf[Int]))
@@ -190,6 +198,8 @@ object DataTypeUtils {
     } else if (dataType.equalsIgnoreCase(ByteType.typeName) ||
       dataType.equalsIgnoreCase(ByteType.simpleString)) {
       ByteType
+    } else if (dataType.equalsIgnoreCase(DateType.typeName)) {
+      DateType
     } else if (dataType.equalsIgnoreCase(ShortType.typeName) ||
       dataType.equalsIgnoreCase(ShortType.simpleString)) {
       ShortType

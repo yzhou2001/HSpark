@@ -37,6 +37,22 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
     super.afterAll()
   }
 
+  test("DateType test") {
+    sql( """CREATE TABLE date_table (c1 INTEGER, c2 date) TBLPROPERTIES(
+        'hbaseTableName'='date_table',
+        'keyCols'='c1',
+        'nonKeyCols'='c2,f,c')""")
+    sql("insert into table date_table values (1, '2010-01-01')")
+    sql("insert into table date_table values (2, '2011-01-01')")
+    val result = sql("select * from date_table order by c2 desc").collect
+    assert(result.length == 2)
+    assert(result(0).get(0) == 2)
+    assert(result(0).get(1).toString == "2011-01-01")
+    assert(result(1).get(0) == 1)
+    assert(result(1).get(1).toString == "2010-01-01")
+    sql("drop table date_table")
+  }
+
   test("Insert Into table in StringFormat") {
     sql( """CREATE TABLE tb0 (column2 INTEGER, column1 INTEGER, column4 FLOAT, column3 SHORT) TBLPROPERTIES(
         'hbaseTableName'='default.ht0',

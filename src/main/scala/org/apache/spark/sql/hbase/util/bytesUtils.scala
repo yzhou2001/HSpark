@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hbase.util
 
 import org.apache.hadoop.hbase.util.Bytes
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
@@ -28,6 +29,7 @@ trait BytesUtils {
   def toUTF8String(input: HBaseRawType, offset: Int, length: Int): UTF8String
   def toByte(input: HBaseRawType, offset: Int, length: Int): Byte
   def toBoolean(input: HBaseRawType, offset: Int, length: Int): Boolean
+  def toDate(input: HBaseRawType, offset: Int, length: Int): Int
   def toDouble(input: HBaseRawType, offset: Int, length: Int): Double
   def toShort(input: HBaseRawType, offset: Int, length: Int): Short
   def toFloat(input: HBaseRawType, offset: Int, length: Int): Float
@@ -94,6 +96,7 @@ trait ToBytesUtils {
   def toBytes(input: UTF8String): HBaseRawType
   def toBytes(input: Byte): HBaseRawType
   def toBytes(input: Boolean): HBaseRawType
+  def toBytes(input: java.sql.Date): HBaseRawType
   def toBytes(input: Double): HBaseRawType
   def toBytes(input: Short): HBaseRawType
   def toBytes(input: Float): HBaseRawType
@@ -109,6 +112,7 @@ object BinaryBytesUtils extends BytesUtils{
     dataType match {
       case BooleanType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_BOOLEAN), BooleanType)
       case ByteType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_BYTE), ByteType)
+      case DateType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_INT), DateType)
       case DoubleType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_DOUBLE), DoubleType)
       case FloatType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_FLOAT), FloatType)
       case IntegerType => new BinaryBytesUtils(new HBaseRawType(Bytes.SIZEOF_INT), IntegerType)
@@ -130,6 +134,10 @@ object BinaryBytesUtils extends BytesUtils{
 
   def toBoolean(input: HBaseRawType, offset: Int, length: Int = 0): Boolean = {
     input(offset) != 0
+  }
+
+  def toDate(input: HBaseRawType, offset: Int, length: Int = 0): Int = {
+    Bytes.toInt(input, offset, Bytes.SIZEOF_INT)
   }
 
   def toDouble(input: HBaseRawType, offset: Int, length: Int = 0): Double = {
@@ -195,6 +203,12 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     buffer
   }
 
+  def toBytes(input: java.sql.Date): HBaseRawType = {
+    val v = DateTimeUtils.millisToDays(input.getTime)
+    Bytes.putInt(buffer, 0, v)
+    buffer
+  }
+
   def toBytes(input: Double): HBaseRawType = {
     var l: Long = java.lang.Double.doubleToLongBits(input)
     l = (l ^ ((l >> java.lang.Long.SIZE - 1) | java.lang.Long.MIN_VALUE)) + 1
@@ -240,6 +254,7 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     input match {
       case item: Boolean => toBytes(item)
       case item: Byte => toBytes(item)
+      case item: java.sql.Date => toBytes(item)
       case item: Double => toBytes(item)
       case item: Float => toBytes(item)
       case item: Int => toBytes(item)
@@ -259,6 +274,7 @@ object StringBytesUtils extends BytesUtils {
     dataType match {
       case BooleanType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_BOOLEAN), BooleanType)
       case ByteType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_BYTE), ByteType)
+      case DateType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_LONG), DateType)
       case DoubleType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_DOUBLE), DoubleType)
       case FloatType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_FLOAT), FloatType)
       case IntegerType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_INT), IntegerType)
@@ -282,6 +298,10 @@ object StringBytesUtils extends BytesUtils {
 
   def toBoolean(input: HBaseRawType, offset: Int, length: Int): Boolean = {
     toString(input, offset, length).toBoolean
+  }
+
+  def toDate(input: HBaseRawType, offset: Int, length: Int): Int = {
+    toString(input, offset, length).toInt
   }
 
   def toDouble(input: HBaseRawType, offset: Int, length: Int): Double = {
@@ -323,6 +343,11 @@ class StringBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     buffer
   }
 
+  def toBytes(input: java.sql.Date): HBaseRawType = {
+    buffer = toBytes(DateTimeUtils.millisToDays(input.getTime))
+    buffer
+  }
+
   def toBytes(input: Double): HBaseRawType = {
     buffer = input.toString.getBytes
     buffer
@@ -352,6 +377,7 @@ class StringBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
     input match {
       case item: Boolean => toBytes(item)
       case item: Byte => toBytes(item)
+      case item: java.sql.Date => toBytes(item)
       case item: Double => toBytes(item)
       case item: Float => toBytes(item)
       case item: Int => toBytes(item)
