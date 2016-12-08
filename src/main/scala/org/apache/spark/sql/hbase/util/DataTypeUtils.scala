@@ -69,14 +69,14 @@ object DataTypeUtils {
     dt match {
       case BooleanType => bu.toBytes(src.asInstanceOf[Boolean])
       case ByteType => bu.toBytes(src.asInstanceOf[Byte])
-      case DateType => bu.toBytes(src.asInstanceOf[java.sql.Date])
+      case DateType => bu.toBytes(src.asInstanceOf[Int])
       case DoubleType => bu.toBytes(src.asInstanceOf[Double])
       case FloatType => bu.toBytes(src.asInstanceOf[Float])
       case IntegerType => bu.toBytes(src.asInstanceOf[Int])
       case LongType => bu.toBytes(src.asInstanceOf[Long])
       case ShortType => bu.toBytes(src.asInstanceOf[Short])
       case StringType => bu.toBytes(src)
-      case TimestampType => bu.toBytes(src.asInstanceOf[java.sql.Timestamp])
+      case TimestampType => bu.toBytes(src.asInstanceOf[Long])
       case _ => new JavaSerializer(null).newInstance().serialize[Any](src).array //TODO
     }
   }

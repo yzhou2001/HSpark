@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.hbase
 
+import java.util.GregorianCalendar
+
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
@@ -110,9 +112,40 @@ class BytesUtilsSuite extends FunSuite with BeforeAndAfterAll with Logging {
     assert(Bytes.compareTo(BinaryBytesUtils.addOne(byteArray),  Array[Byte](0x03.toByte, 0x00.toByte)) == 0)
   }
 
-  test("float comparison") {
+  test("value comparison") {
+    val b1 = BinaryBytesUtils.create(ByteType).toBytes(-2.asInstanceOf[Byte])
+    val b2 = BinaryBytesUtils.create(ByteType).toBytes(4.asInstanceOf[Byte])
+    assert(Bytes.compareTo(b1, b2) < 0)
+
+    val s1 = BinaryBytesUtils.create(ShortType).toBytes(-2.asInstanceOf[Short])
+    val s2 = BinaryBytesUtils.create(ShortType).toBytes(4.asInstanceOf[Short])
+    assert(Bytes.compareTo(s1, s2) < 0)
+
+    val i1 = BinaryBytesUtils.create(IntegerType).toBytes(-2)
+    val i2 = BinaryBytesUtils.create(IntegerType).toBytes(4)
+    assert(Bytes.compareTo(i1, i2) < 0)
+
     val f1 = BinaryBytesUtils.create(FloatType).toBytes(-1.23f)
     val f2 = BinaryBytesUtils.create(FloatType).toBytes(100f)
     assert(Bytes.compareTo(f1, f2) < 0)
+
+    val d1 = BinaryBytesUtils.create(DoubleType).toBytes(-1.23)
+    val d2 = BinaryBytesUtils.create(DoubleType).toBytes(456.0)
+    assert(Bytes.compareTo(d1, d2) < 0)
+
+    val l1 = BinaryBytesUtils.create(DoubleType).toBytes(-123L)
+    val l2 = BinaryBytesUtils.create(DoubleType).toBytes(456L)
+    assert(Bytes.compareTo(l1, l2) < 0)
+
+    val calendar1 = new GregorianCalendar(2013, 1, 28, 13, 24, 56)
+    val calendar2 = new GregorianCalendar(2016, 12, 8, 15, 24, 56)
+
+    val date1 = BinaryBytesUtils.create(DateType).toBytes(new java.sql.Date(calendar1.getTimeInMillis))
+    val date2 = BinaryBytesUtils.create(DateType).toBytes(new java.sql.Date(calendar2.getTimeInMillis))
+    assert(Bytes.compareTo(date1, date2) < 0)
+
+    val timestamp1 = BinaryBytesUtils.create(TimestampType).toBytes(new java.sql.Timestamp(calendar1.getTimeInMillis))
+    val timestamp2 = BinaryBytesUtils.create(TimestampType).toBytes(new java.sql.Timestamp(calendar2.getTimeInMillis))
+    assert(Bytes.compareTo(timestamp1, timestamp2) < 0)
   }
 }

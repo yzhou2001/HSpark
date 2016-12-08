@@ -18,6 +18,7 @@
 package org.apache.spark.sql.hbase
 
 import org.apache.hadoop.hbase.TableName
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 
 /**
  * Test insert / query against the table
@@ -38,34 +39,44 @@ class HBaseBasicOperationSuite extends TestBaseWithSplitData {
   }
 
   test("DateType test") {
-    sql( """CREATE TABLE date_table (c1 INTEGER, c2 DATE) TBLPROPERTIES(
+    sql( """CREATE TABLE date_table (c1 DATE, c2 DATE) TBLPROPERTIES(
         'hbaseTableName'='date_table',
         'keyCols'='c1',
         'nonKeyCols'='c2,f,c')""")
-    sql("insert into table date_table values (1, '2010-01-01')")
-    sql("insert into table date_table values (2, '2011-01-01')")
-    val result = sql("select * from date_table order by c2 desc").collect
-    assert(result.length == 2)
-    assert(result(0).get(0) == 2)
-    assert(result(0).get(1).toString == "2011-01-01")
-    assert(result(1).get(0) == 1)
-    assert(result(1).get(1).toString == "2010-01-01")
+    sql("insert into table date_table values ('2010-12-31', '2010-01-01')")
+    sql("insert into table date_table values ('2011-12-31', '2011-01-01')")
+    sql("insert into table date_table values ('2012-12-31', '2012-01-01')")
+
+    val result1 = sql("select * from date_table where c1 < cast('2012-12-31' as date) order by c2 desc").collect
+    assert(result1.length == 2)
+
+    val result2 = sql("select * from date_table where c2 < cast('2012-01-01' as date) order by c2 desc").collect
+    assert(result2.length == 2)
+    assert(result2(0).get(0).toString == "2011-12-31")
+    assert(result2(0).get(1).toString == "2011-01-01")
+    assert(result2(1).get(0).toString == "2010-12-31")
+    assert(result2(1).get(1).toString == "2010-01-01")
     sql("drop table date_table")
   }
 
   test("TimestampType test") {
-    sql( """CREATE TABLE ts_table (c1 INTEGER, c2 TIMESTAMP) TBLPROPERTIES(
+    sql( """CREATE TABLE ts_table (c1 TIMESTAMP, c2 TIMESTAMP) TBLPROPERTIES(
         'hbaseTableName'='ts_table',
         'keyCols'='c1',
         'nonKeyCols'='c2,f,c')""")
-    sql("insert into table ts_table values (1, '2009-08-07 13:14:15')")
-    sql("insert into table ts_table values (2, '2010-08-07 13:14:15')")
-    val result = sql("select * from ts_table order by c2 desc").collect
-    assert(result.length == 2)
-    assert(result(0).get(0) == 2)
-    assert(result(0).get(1).toString == "2010-08-07 13:14:15.0")
-    assert(result(1).get(0) == 1)
-    assert(result(1).get(1).toString == "2009-08-07 13:14:15.0")
+    sql("insert into table ts_table values ('2009-08-07 03:14:15', '2009-08-07 13:14:15')")
+    sql("insert into table ts_table values ('2010-08-07 03:14:15', '2010-08-07 13:14:15')")
+    sql("insert into table ts_table values ('2011-08-07 03:14:15', '2011-08-07 13:14:15')")
+
+    val result1 = sql("select * from ts_table where c1 < cast('2011-08-07 03:14:15' as timestamp) order by c2 desc").collect
+    assert(result1.length == 2)
+
+    val result2 = sql("select * from ts_table where c2 < cast('2011-08-07 13:14:15' as timestamp) order by c2 desc").collect
+    assert(result2.length == 2)
+    assert(result2(0).get(0).toString == "2010-08-07 03:14:15.0")
+    assert(result2(0).get(1).toString == "2010-08-07 13:14:15.0")
+    assert(result2(1).get(0).toString == "2009-08-07 03:14:15.0")
+    assert(result2(1).get(1).toString == "2009-08-07 13:14:15.0")
     sql("drop table ts_table")
   }
 

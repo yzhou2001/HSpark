@@ -142,7 +142,7 @@ object BinaryBytesUtils extends BytesUtils{
   }
 
   def toDate(input: HBaseRawType, offset: Int, length: Int = 0): Int = {
-    Bytes.toInt(input, offset, Bytes.SIZEOF_INT)
+    toInt(input, offset, Bytes.SIZEOF_INT)
   }
 
   def toDouble(input: HBaseRawType, offset: Int, length: Int = 0): Double = {
@@ -185,8 +185,7 @@ object BinaryBytesUtils extends BytesUtils{
   }
 
   def toTimestamp(input: HBaseRawType, offset: Int, length: Int): Long = {
-    val v = Bytes.toLong(input, offset, Bytes.SIZEOF_LONG)
-    v * 1000L
+    toLong(input, offset, Bytes.SIZEOF_LONG)
   }
 }
 
@@ -214,9 +213,8 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
   }
 
   def toBytes(input: java.sql.Date): HBaseRawType = {
-    val v = DateTimeUtils.millisToDays(input.getTime)
-    Bytes.putInt(buffer, 0, v)
-    buffer
+    val v: Int = DateTimeUtils.millisToDays(input.getTime)
+    toBytes(v)
   }
 
   def toBytes(input: Double): HBaseRawType = {
@@ -261,9 +259,8 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
   }
 
   def toBytes(input: java.sql.Timestamp): HBaseRawType = {
-    val v = input.getTime
-    Bytes.putLong(buffer, 0, v)
-    buffer
+    val v: Long = input.getTime * 1000L
+    toBytes(v)
   }
 
   def toBytes(input: Any): HBaseRawType = {
@@ -278,6 +275,7 @@ class BinaryBytesUtils(var buffer: HBaseRawType, dt: DataType) extends ToBytesUt
       case item: Short => toBytes(item)
       case item: String => UTF8String.fromString(item).getBytes
       case item: UTF8String => toBytes(item)
+      case _=> throw new SparkException(s"Unrecognized data type: ${input}")
     }
   }
 }
@@ -297,6 +295,7 @@ object StringBytesUtils extends BytesUtils {
       case LongType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_LONG), LongType)
       case ShortType => new StringBytesUtils(new HBaseRawType(Bytes.SIZEOF_SHORT), ShortType)
       case StringType => new StringBytesUtils(null, StringType)
+      case _=> throw new SparkException(s"Unrecognized data type: ${dataType.catalogString}")
     }
   }
 
