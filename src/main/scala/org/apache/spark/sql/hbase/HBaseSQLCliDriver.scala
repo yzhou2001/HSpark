@@ -20,12 +20,11 @@ package org.apache.spark.sql.hbase
 import java.io.{File, PrintWriter}
 
 import jline.console.ConsoleReader
-import jline.console.completer.{Completer, FileNameCompleter, StringsCompleter}
+import jline.console.completer.{ArgumentCompleter, Completer, FileNameCompleter, StringsCompleter}
 import jline.console.history.FileHistory
 import org.apache.spark.internal.Logging
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -55,19 +54,28 @@ object HBaseSQLCliDriver extends Logging {
   private val HELP = "HELP"
   private val COLOR = "COLOR"
 
-  private val KEYS = "COLOR QUIT EXIT HELP CREATE DROP ALTER LOAD SELECT INSERT DESCRIBE SHOW TABLES TBLPROPERTIES"
-  private val KEYWORDS = {
-    val upper = KEYS.split(" ")
-    val lower = upper.map (_.toLowerCase())
-    val extra = Seq (HBaseSQLConf.HBASE_TABLENAME, HBaseSQLConf.NAMESPACE, HBaseSQLConf.COLS,
-      HBaseSQLConf.KEY_COLS, HBaseSQLConf.NONKEY_COLS, HBaseSQLConf.ENCODING_FORMAT)
-    Seq.concat(upper, lower, extra)
-  }
-
   def getCompleters: Seq[Completer] = {
     val completers = ArrayBuffer[Completer]()
 
-    completers.append(new StringsCompleter(KEYWORDS.asJava))
+    completers.append(new StringsCompleter("create", "drop", "load", "select", "insert", "describe", "show", "color", "help"))
+    completers.append(new ArgumentCompleter(new StringsCompleter("create"),
+      new StringsCompleter("table () tblproperties ('hbaseTableName'='', 'keyCols'='', 'nonKeyCols'='')")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("drop"),
+      new StringsCompleter("table", "database")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("load"),
+      new StringsCompleter("data inpath into")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("select"),
+      new StringsCompleter("from where")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("insert"),
+      new StringsCompleter("into table values")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("describe"),
+      new StringsCompleter("database")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("show"),
+      new StringsCompleter("tables", "databases", "schemas")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("color"),
+      new StringsCompleter("black", "red", "green", "yellow", "blue", "purple", "cyan", "white")))
+    completers.append(new ArgumentCompleter(new StringsCompleter("help"),
+      new StringsCompleter("create", "drop", "load", "select", "insert", "describe", "show", "color")))
     completers.append(new FileNameCompleter)
 
     completers
