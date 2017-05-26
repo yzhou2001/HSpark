@@ -199,7 +199,7 @@ object PartialPredicateOperations {
             (null, unboundAttributeReference(e, schema))
           }
         // TODO: CAST/Arithmetic could be treated more nicely
-        case Cast(_, _) => (null, unboundAttributeReference(e, schema))
+        case Cast(_, _, _) => (null, unboundAttributeReference(e, schema))
         // case BinaryArithmetic => null
         case UnaryMinus(_) => (null, unboundAttributeReference(e, schema))
         case EqualTo(left, right) =>

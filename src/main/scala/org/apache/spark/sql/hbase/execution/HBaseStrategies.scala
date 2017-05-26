@@ -18,16 +18,18 @@
 package org.apache.spark.sql.hbase.execution
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.catalog.SimpleCatalogRelation
+import org.apache.spark.sql.catalyst.catalog.CatalogRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.{CatalystConf, InternalRow}
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.command.{CreateTableCommand, DDLUtils}
+import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase._
-import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.types.{DataType, StringType}
+import org.apache.spark.sql.{AnalysisException, SaveMode, SparkSession, Strategy}
 
 /**
  * Retrieves data using a HBaseTableScan.  Partition pruning predicates are also detected and
@@ -60,7 +62,7 @@ private[hbase] trait HBaseStrategies {
 //            planLater(child)) :: Nil
 
       case PhysicalOperation(projectList, inPredicates,
-      l@LogicalRelation(relation: HBaseRelation, None, None)) =>
+      l@LogicalRelation(relation: HBaseRelation, _, None)) =>
         pruneFilterProjectHBase(
           l,
           projectList,
@@ -226,41 +228,40 @@ private[hbase] trait HBaseStrategies {
 
 }
 
-private[hbase] case class HBaseSourceAnalysis(conf: CatalystConf, session: SparkSession)
+private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
   extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case s: SimpleCatalogRelation =>
-      val properties = s.metadata.properties
+  override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperators {
+    case s: CatalogRelation =>
+      val properties = s.tableMeta.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
         val namespace = properties(HBaseSQLConf.NAMESPACE)
         val table = properties(HBaseSQLConf.TABLE)
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
-          session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table).get.logicalRelation
+          val result = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, table).get
+          result.logicalRelation = LogicalRelation(result, s.dataCols, None)
+          result.logicalRelation
         } else {
           s
         }
       } else {
         s
       }
-    case insert@InsertIntoTable(s: SimpleCatalogRelation, _, _, _, _) =>
-      val properties = s.metadata.properties
-      if (properties.contains(HBaseSQLConf.PROVIDER) &&
-        properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
-        val namespace = properties(HBaseSQLConf.NAMESPACE)
-        val table = properties(HBaseSQLConf.TABLE)
-        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
-        if (catalogTable != null) {
-          val t = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
-            .getHBaseRelation(namespace, table).get.logicalRelation
-          insert.copy(table = t)
-        } else {
-          insert
-        }
-      } else {
-        insert
+    case insert@InsertIntoTable(s: CatalogRelation, _, query, _, _) =>
+      val valSeq = query match {
+        case p: Project =>
+          val lr = p.child match {
+            case c: LocalRelation => c
+            case _ => throw new AnalysisException("Invalid InsertIntoTable proj.child: LocalRelation expected")
+          }
+          val types = new Array[StringType](lr.data(0).numFields)
+          lr.data(0).toSeq(types).map(_.toString)
+        case _ => throw new AnalysisException("Invalid InsertIntoTable query: Project expected")
       }
+      InsertValueIntoTableCommand(s.tableMeta.identifier, valSeq)
+    case CreateTable(tableDesc, mode, None) =>
+      CreateTableCommand(tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
   }
 }
