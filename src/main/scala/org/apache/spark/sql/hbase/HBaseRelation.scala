@@ -85,8 +85,8 @@ private[hbase] case class HBaseRelation(
       BinaryBytesUtils
     }
 
-  lazy val partitionKeys = keyColumns.map(col =>
-    logicalRelation.output.find(_.name == col.sqlName).get)
+  def partitionKeys = keyColumns.map(col =>
+    output.find(_.name == col.sqlName).get)
 
   @transient lazy val columnMap = allColumns.map {
     case key: KeyColumn => (key.sqlName, key.order)
@@ -169,12 +169,23 @@ private[hbase] case class HBaseRelation(
   }
 
   // corresponding logical relation
-  @transient var logicalRelation = LogicalRelation(this)
+  @transient private var _logicalRelation: LogicalRelation = _
 
-  lazy val output = {
-    if (logicalRelation == null) logicalRelation = LogicalRelation(this)
-    logicalRelation.output
+  def logicalRelation(lr: Option[LogicalRelation] = None): LogicalRelation = {
+    lr match {
+      case Some(l) => {
+        _logicalRelation = l
+        output = l.output
+      }
+      case None => if (_logicalRelation == null) {
+        _logicalRelation = LogicalRelation(this)
+        output = _logicalRelation.output
+      }
+    }
+    _logicalRelation
   }
+
+  var output: Seq[AttributeReference] = _
 
   @transient lazy val dts: Seq[DataType] = allColumns.map(_.dataType)
 

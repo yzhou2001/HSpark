@@ -241,8 +241,7 @@ private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
         if (catalogTable != null) {
           val result = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
             .getHBaseRelation(namespace, table).get
-          result.logicalRelation = LogicalRelation(result, s.dataCols, None)
-          result.logicalRelation
+          result.logicalRelation(Some(LogicalRelation(result, s.dataCols, None)))
         } else {
           s
         }
