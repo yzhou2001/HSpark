@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.{CreateTableCommand, DDLUtils}
-import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{CreateTable, InsertIntoDataSourceCommand, LogicalRelation}
 import org.apache.spark.sql.execution.{ProjectExec, SparkPlan, SparkPlanner}
 import org.apache.spark.sql.hbase._
 import org.apache.spark.sql.types.{DataType, StringType}
@@ -248,18 +248,24 @@ private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
       } else {
         s
       }
-    case insert@InsertIntoTable(s: CatalogRelation, _, query, _, _) =>
-      val valSeq = query match {
-        case p: Project =>
-          val lr = p.child match {
-            case c: LocalRelation => c
-            case _ => throw new AnalysisException("Invalid InsertIntoTable proj.child: LocalRelation expected")
-          }
-          val types = new Array[StringType](lr.data(0).numFields)
-          lr.data(0).toSeq(types).map(_.toString)
-        case _ => throw new AnalysisException("Invalid InsertIntoTable query: Project expected")
+    case insert@InsertIntoTable(s: CatalogRelation, p, c, o, i) =>
+      val properties = s.tableMeta.properties
+      if (properties.contains(HBaseSQLConf.PROVIDER) &&
+        properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
+        val namespace = properties(HBaseSQLConf.NAMESPACE)
+        val _table = properties(HBaseSQLConf.TABLE)
+        val catalogTable = session.sharedState.externalCatalog.getTable(namespace, _table)
+        if (catalogTable != null) {
+          val r = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
+            .getHBaseRelation(namespace, _table).get
+          val t = r.logicalRelation(Some(LogicalRelation(r, s.dataCols, None)))
+          InsertIntoDataSourceCommand(t, insert.query, insert.overwrite)
+        } else {
+          insert
+        }
+      } else {
+        insert
       }
-      InsertValueIntoTableCommand(s.tableMeta.identifier, valSeq)
     case CreateTable(tableDesc, mode, None) =>
       CreateTableCommand(tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
   }
