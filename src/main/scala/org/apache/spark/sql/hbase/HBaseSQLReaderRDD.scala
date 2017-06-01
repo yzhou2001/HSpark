@@ -292,16 +292,23 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
           gets.add(generateGet(range))
           range.lastRange.pred
         })
+
+        val predOutput = output.union(predForEachRange.flatMap(pr =>
+          if (pr == null) {
+            Nil
+          } else {
+            pr.references.toSeq
+          })).distinct
         val resultsWithPred = relation.htable.get(gets).zip(predForEachRange).filter(!_._1.isEmpty)
 
         def evalResultForBoundPredicate(input: InternalRow, predicate: Expression): Boolean = {
-          val boundPredicate = BindReferences.bindReference(predicate, output)
+          val boundPredicate = BindReferences.bindReference(predicate, predOutput)
           boundPredicate.eval(input).asInstanceOf[Boolean]
         }
-        val projections = output.zipWithIndex
+        val projections = predOutput.zipWithIndex
         val resultRows: Seq[InternalRow] = for {
           (result, predicate) <- resultsWithPred
-          row = new GenericInternalRow(output.size)
+          row = new GenericInternalRow(predOutput.size)
           resultRow = relation.buildRow(projections, result, row)
           if predicate == null || evalResultForBoundPredicate(resultRow, predicate)
         } yield resultRow
