@@ -235,8 +235,8 @@ private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
       val properties = s.tableMeta.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
-        val namespace = properties(HBaseSQLConf.NAMESPACE)
-        val table = properties(HBaseSQLConf.TABLE)
+        val namespace = s.tableMeta.identifier.database.getOrElse("default")
+        val table = s.tableMeta.identifier.table
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, table)
         if (catalogTable != null) {
           val result = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]
@@ -252,8 +252,8 @@ private[hbase] case class HBaseSourceAnalysis(session: SparkSession)
       val properties = s.tableMeta.properties
       if (properties.contains(HBaseSQLConf.PROVIDER) &&
         properties(HBaseSQLConf.PROVIDER) == HBaseSQLConf.HBASE) {
-        val namespace = properties(HBaseSQLConf.NAMESPACE)
-        val _table = properties(HBaseSQLConf.TABLE)
+        val namespace = s.tableMeta.identifier.database.getOrElse("default")
+        val _table = s.tableMeta.identifier.table
         val catalogTable = session.sharedState.externalCatalog.getTable(namespace, _table)
         if (catalogTable != null) {
           val r = session.sharedState.externalCatalog.asInstanceOf[HBaseCatalog]

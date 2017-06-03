@@ -467,8 +467,7 @@ private[hbase] class HBaseCatalog(@(transient@param) sqlContext: SQLContext,
 
     val catalogTable = CatalogTable(identifier, CatalogTableType.EXTERNAL,
       CatalogStorageFormat.empty, StructType(schema.toArray),
-      properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE,
-        HBaseSQLConf.NAMESPACE -> namespace, HBaseSQLConf.TABLE -> table))
+      properties = immutable.Map(HBaseSQLConf.PROVIDER -> HBaseSQLConf.HBASE))
     catalogTable
   }
 
