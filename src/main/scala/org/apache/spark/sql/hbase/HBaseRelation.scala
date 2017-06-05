@@ -24,15 +24,13 @@ import org.apache.hadoop.hbase.{HBaseConfiguration, _}
 import org.apache.log4j.Logger
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{InternalRow, NotPusher}
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hbase.catalyst.NotPusher
-import org.apache.spark.sql.hbase.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
-import org.apache.spark.sql.hbase.types.Range
 import org.apache.spark.sql.hbase.util._
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{Range, _}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import scala.collection.JavaConversions._
