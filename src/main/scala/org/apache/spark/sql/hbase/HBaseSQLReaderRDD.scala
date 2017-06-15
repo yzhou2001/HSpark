@@ -69,6 +69,10 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
                         @(transient @param) val filterPred: Option[Expression],
                         @(transient @param) sqlContext: SQLContext)
   extends RDD[InternalRow](sqlContext.sparkContext, Nil) with Logging {
+  @transient lazy val filterPredNullReduced = filterPred match {
+    case Some(p) => Some(p.notNullReduce())
+    case None => None
+  }
   val hasSubPlan = subplan.isDefined
   val rowBuilder: (Seq[(Attribute, Int)], Result, InternalRow) => InternalRow = if (hasSubPlan) {
     relation.buildRowAfterCoprocessor
@@ -105,7 +109,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   }
 
   override def getPartitions: Array[Partition] = {
-    RangeCriticalPoint.generatePrunedPartitions(relation, filterPred).toArray
+    RangeCriticalPoint.generatePrunedPartitions(relation, filterPredNullReduced).toArray
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
@@ -251,12 +255,7 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   // filter predicate will be used
   override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val partition = split.asInstanceOf[HBasePartition]
-    val predicate = partition.computePredicate(relation) match {
-      case Some(pred) =>
-        val prRes = pred.notNullReduce()
-        Some(prRes)
-      case None => None
-    }
+    val predicate = partition.computePredicate(relation)
     val expandedCPRs: Seq[MDCriticalPointRange[_]] =
       RangeCriticalPoint.generateCriticalPointRanges(relation, predicate)._2.
         flatMap(_.flatten(new ArrayBuffer[(Any, AtomicType)](relation.dimSize)))
