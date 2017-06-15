@@ -23,6 +23,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.PartialPredicateOperations.partialPredicateReducer
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.{GeneratePredicate, Predicate}
 import org.apache.spark.sql.execution.SparkPlan
@@ -250,7 +251,12 @@ class HBaseSQLReaderRDD(val relation: HBaseRelation,
   // filter predicate will be used
   override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val partition = split.asInstanceOf[HBasePartition]
-    val predicate = partition.computePredicate(relation)
+    val predicate = partition.computePredicate(relation) match {
+      case Some(pred) =>
+        val prRes = pred.notNullReduce()
+        Some(prRes)
+      case None => None
+    }
     val expandedCPRs: Seq[MDCriticalPointRange[_]] =
       RangeCriticalPoint.generateCriticalPointRanges(relation, predicate)._2.
         flatMap(_.flatten(new ArrayBuffer[(Any, AtomicType)](relation.dimSize)))
