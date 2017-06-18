@@ -55,20 +55,13 @@ object PartialPredicateOperations {
       schema(br.ordinal)
     }
 
-    private def collectBoundRefs(exp: Expression): Set[BoundReference] = {
-      var res: Set[BoundReference] = Set.empty
-      exp foreachUp(e0 => e0 match {
-        case br: BoundReference => res = res + br
-        case _ =>
-      })
-      res
-    }
-
     def notNullReduce(): Expression = {
       val schema = e.references.toSeq
       val input = new GenericInternalRow(schema.size) // an all-null row
       val boundPred = BindReferences.bindReference(e, schema)
-      val ars = collectBoundRefs(boundPred)
+      val ars = boundPred.collect {
+        case br: BoundReference => br
+      }
       if (ars.isEmpty) {
         e
       } else {
